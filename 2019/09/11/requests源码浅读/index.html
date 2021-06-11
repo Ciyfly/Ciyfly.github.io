@@ -1,0 +1,953 @@
+<!DOCTYPE html>
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+<html class="theme-next gemini use-motion" lang="zh-CN">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=7.2.0">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=7.2.0">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=7.2.0">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=7.2.0" color="#222">
+
+
+
+
+
+
+<link rel="stylesheet" href="/css/main.css?v=7.2.0">
+
+
+
+
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css?v=4.7.0">
+
+
+
+
+
+
+
+
+<script id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '7.2.0',
+    sidebar: {"position":"left","display":"post","offset":12,"onmobile":false},
+    back2top: {"enable":true,"sidebar":false,"scrollpercent":true},
+    copycode: {"enable":false,"show_result":false,"style":null},
+    fancybox: false,
+    mediumzoom: false,
+    lazyload: false,
+    pangu: false,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    },
+    translation: {
+      copy_button: '复制',
+      copy_success: '复制成功',
+      copy_failure: '复制失败'
+    }
+  };
+</script>
+
+  <meta name="description" content="版本是 request-2.22.0 静态读源码">
+<meta name="keywords" content="源码">
+<meta property="og:type" content="article">
+<meta property="og:title" content="requests源码浅读">
+<meta property="og:url" content="http://yoursite.com/2019/09/11/requests源码浅读/index.html">
+<meta property="og:site_name" content="Recar的笔记">
+<meta property="og:description" content="版本是 request-2.22.0 静态读源码">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:updated_time" content="2021-06-11T10:33:06.333Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="requests源码浅读">
+<meta name="twitter:description" content="版本是 request-2.22.0 静态读源码">
+
+
+
+
+
+  
+  
+  <link rel="canonical" href="http://yoursite.com/2019/09/11/requests源码浅读/">
+
+
+
+<script id="page.configurations">
+  CONFIG.page = {
+    sidebar: "",
+  };
+</script>
+
+  
+  <title>requests源码浅读 | Recar的笔记</title>
+  
+
+
+
+
+
+
+  <script>
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?f6Wf4b00fa957d7290583a86b0d8c2de1";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .motion-element,
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-title { opacity: initial; }
+
+  .use-motion .logo,
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-CN">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Recar的笔记</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+    
+    
+  </div>
+
+  <div class="site-nav-toggle">
+    <button aria-label="切换导航栏">
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  
+    <ul id="menu" class="menu">
+      
+        
+        
+        
+          
+          <li class="menu-item menu-item-home">
+
+    
+    
+      
+    
+
+    
+
+    <a href="/" rel="section"><i class="menu-item-icon fa fa-fw fa-home"></i> <br>首页</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-about">
+
+    
+    
+      
+    
+
+    
+
+    <a href="/about/" rel="section"><i class="menu-item-icon fa fa-fw fa-user"></i> <br>关于</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-tags">
+
+    
+    
+      
+    
+
+    
+
+    <a href="/tags/" rel="section"><i class="menu-item-icon fa fa-fw fa-tags"></i> <br>标签</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-archives">
+
+    
+    
+      
+    
+
+    
+
+    <a href="/archives/" rel="section"><i class="menu-item-icon fa fa-fw fa-archive"></i> <br>归档</a>
+
+  </li>
+
+      
+      
+    </ul>
+  
+
+  
+
+  
+</nav>
+
+
+
+</div>
+    </header>
+
+    
+  
+  
+
+  
+
+  <a href="https://github.com/Ciyfly" class="github-corner" title="Follow me on GitHub" aria-label="Follow me on GitHub" rel="noopener" target="_blank"><svg width="80" height="80" viewbox="0 0 250 250" aria-hidden="true"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"/><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"/><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"/></svg></a>
+
+
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+            
+
+          
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+      
+
+  
+  
+  
+
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2019/09/11/requests源码浅读/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Recar">
+      <meta itemprop="description" content="年轻人就应该多读源码多读书">
+      <meta itemprop="image" content="/images/avatar.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Recar的笔记">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">requests源码浅读
+
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+
+          
+          
+          
+
+          
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+
+              
+                
+              
+
+              <time title="创建时间：2019-09-11 18:46:45" itemprop="dateCreated datePublished" datetime="2019-09-11T18:46:45+00:00">2019-09-11</time>
+            </span>
+          
+
+          
+            
+
+            
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">更新于</span>
+                
+                <time title="修改时间：2021-06-11 10:33:06" itemprop="dateModified" datetime="2021-06-11T10:33:06+00:00">2021-06-11</time>
+              </span>
+            
+          
+
+          
+
+          
+          
+
+          
+
+          
+
+          <br>
+          
+
+          
+
+          
+            <div class="post-description">版本是 request-2.22.0 静态读源码</div>
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>版本是 request-2.22.0<br><strong>init</strong> 初始化 一些信息 将各个包都导入  </p>
+<p>主要是这一句 </p>
+<p><code>from .api import request, get, head, post, patch, put, delete, options</code>  </p>
+<p>这是从api 那里导入了 这么多的功能  </p>
+<p>api中导出的这些都是基于 request 方法的<br>get head等是对他的方法的封装<br>从其他模块导入到 <code>__init__</code> 这样直接就能  <code>from request import</code> 了<br>是在<strong>api.py</strong>下的<br>request方法 注释 参数很详细  </p>
+<h2 id="request方法参数"><a href="#request方法参数" class="headerlink" title="request方法参数"></a>request方法参数</h2><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">request</span><span class="params">(method, url, **kwargs)</span>:</span></span><br><span class="line">    <span class="string">"""Constructs and sends a :class:`Request &lt;Request&gt;`.</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">    :param method: method for the new :class:`Request` object.</span></span><br><span class="line"><span class="string">    :param url: URL for the new :class:`Request` object.</span></span><br><span class="line"><span class="string">    :param params: (optional) Dictionary, list of tuples or bytes to send</span></span><br><span class="line"><span class="string">        in the query string for the :class:`Request`.</span></span><br><span class="line"><span class="string">    :param data: (optional) Dictionary, list of tuples, bytes, or file-like</span></span><br><span class="line"><span class="string">        object to send in the body of the :class:`Request`.</span></span><br><span class="line"><span class="string">    :param json: (optional) A JSON serializable Python object to send in the body of the :class:`Request`.</span></span><br><span class="line"><span class="string">    :param headers: (optional) Dictionary of HTTP Headers to send with the :class:`Request`.</span></span><br><span class="line"><span class="string">    :param cookies: (optional) Dict or CookieJar object to send with the :class:`Request`.</span></span><br><span class="line"><span class="string">    :param files: (optional) Dictionary of ``'name': file-like-objects`` (or ``&#123;'name': file-tuple&#125;``) for multipart encoding upload.</span></span><br><span class="line"><span class="string">        ``file-tuple`` can be a 2-tuple ``('filename', fileobj)``, 3-tuple ``('filename', fileobj, 'content_type')``</span></span><br><span class="line"><span class="string">        or a 4-tuple ``('filename', fileobj, 'content_type', custom_headers)``, where ``'content-type'`` is a string</span></span><br><span class="line"><span class="string">        defining the content type of the given file and ``custom_headers`` a dict-like object containing additional headers</span></span><br><span class="line"><span class="string">        to add for the file.</span></span><br><span class="line"><span class="string">    :param auth: (optional) Auth tuple to enable Basic/Digest/Custom HTTP Auth.</span></span><br><span class="line"><span class="string">    :param timeout: (optional) How many seconds to wait for the server to send data</span></span><br><span class="line"><span class="string">        before giving up, as a float, or a :ref:`(connect timeout, read</span></span><br><span class="line"><span class="string">        timeout) &lt;timeouts&gt;` tuple.</span></span><br><span class="line"><span class="string">    :type timeout: float or tuple</span></span><br><span class="line"><span class="string">    :param allow_redirects: (optional) Boolean. Enable/disable GET/OPTIONS/POST/PUT/PATCH/DELETE/HEAD redirection. Defaults to ``True``.</span></span><br><span class="line"><span class="string">    :type allow_redirects: bool</span></span><br><span class="line"><span class="string">    :param proxies: (optional) Dictionary mapping protocol to the URL of the proxy.</span></span><br><span class="line"><span class="string">    :param verify: (optional) Either a boolean, in which case it controls whether we verify</span></span><br><span class="line"><span class="string">            the server's TLS certificate, or a string, in which case it must be a path</span></span><br><span class="line"><span class="string">            to a CA bundle to use. Defaults to ``True``.</span></span><br><span class="line"><span class="string">    :param stream: (optional) if ``False``, the response content will be immediately downloaded.</span></span><br><span class="line"><span class="string">    :param cert: (optional) if String, path to ssl client cert file (.pem). If Tuple, ('cert', 'key') pair.</span></span><br><span class="line"><span class="string">    :return: :class:`Response &lt;Response&gt;` object</span></span><br><span class="line"><span class="string">    :rtype: requests.Response</span></span><br><span class="line"><span class="string">    Usage::</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">      &gt;&gt;&gt; import requests</span></span><br><span class="line"><span class="string">      &gt;&gt;&gt; req = requests.request('GET', 'https://httpbin.org/get')</span></span><br><span class="line"><span class="string">      &lt;Response [200]&gt;</span></span><br><span class="line"><span class="string">    """</span></span><br><span class="line"></span><br><span class="line">    <span class="comment"># By using the 'with' statement we are sure the session is closed, thus we</span></span><br><span class="line">    <span class="comment"># avoid leaving sockets open which can trigger a ResourceWarning in some</span></span><br><span class="line">    <span class="comment"># cases, and look like a memory leak in others.</span></span><br><span class="line">    <span class="keyword">with</span> sessions.Session() <span class="keyword">as</span> session:</span><br><span class="line">        <span class="keyword">return</span> session.request(method=method, url=url, **kwargs)</span><br></pre></td></tr></table></figure>
+
+<p>特别是有个json 可以 直接 json=data 这样就发送的就是直接将data转为json发送了  </p>
+<p>比如说 get 就是对rquest的method进行了封装  </p>
+<h2 id="get方法参数"><a href="#get方法参数" class="headerlink" title="get方法参数"></a>get方法参数</h2><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">get</span><span class="params">(self, url, **kwargs)</span>:</span></span><br><span class="line">    <span class="string">r"""Sends a GET request. Returns :class:`Response` object.</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">    :param url: URL for the new :class:`Request` object.</span></span><br><span class="line"><span class="string">    :param \*\*kwargs: Optional arguments that ``request`` takes.</span></span><br><span class="line"><span class="string">    :rtype: requests.Response</span></span><br><span class="line"><span class="string">    """</span></span><br><span class="line"></span><br><span class="line">    kwargs.setdefault(<span class="string">'allow_redirects'</span>, <span class="literal">True</span>)</span><br><span class="line">    <span class="keyword">return</span> self.request(<span class="string">'GET'</span>, url, **kwargs)</span><br></pre></td></tr></table></figure>
+
+<p>根本还是 request里面的使用 session的request来创建  </p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">with</span> sessions.Session() <span class="keyword">as</span> session:</span><br><span class="line">    <span class="keyword">return</span> session.request(method=method, url=url, **kwargs)</span><br><span class="line">```  </span><br><span class="line"></span><br><span class="line">打开一个会话 使用 <span class="keyword">with</span> <span class="keyword">as</span> 的方式  </span><br><span class="line">被<span class="keyword">with</span>使用的里面一定写了 `__enter__` 和 `__exit__` 方法用来 提供给<span class="keyword">with</span>自动关闭的  </span><br><span class="line"></span><br><span class="line">调用session.request方法传入对应值  </span><br><span class="line"></span><br><span class="line">那么我们这里先看下session这个对象  </span><br><span class="line"></span><br><span class="line">`<span class="keyword">from</span> . <span class="keyword">import</span> sessions`  </span><br><span class="line"></span><br><span class="line">是当前目录下的`session.py`  </span><br><span class="line"></span><br><span class="line">首先Session 类  </span><br><span class="line"></span><br><span class="line"><span class="comment">## Session</span></span><br><span class="line"></span><br><span class="line">在 <span class="number">340</span> 行  </span><br><span class="line"></span><br><span class="line">```python</span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Session</span><span class="params">(SessionRedirectMixin)</span>:</span></span><br><span class="line">    <span class="string">"""A Requests session.</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">    Provides cookie persistence, connection-pooling, and configuration.</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">    Basic Usage::</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">      &gt;&gt;&gt; import requests</span></span><br><span class="line"><span class="string">      &gt;&gt;&gt; s = requests.Session()</span></span><br><span class="line"><span class="string">      &gt;&gt;&gt; s.get('https://httpbin.org/get')</span></span><br><span class="line"><span class="string">      &lt;Response [200]&gt;</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">    Or as a context manager::</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">      &gt;&gt;&gt; with requests.Session() as s:</span></span><br><span class="line"><span class="string">      &gt;&gt;&gt;     s.get('https://httpbin.org/get')</span></span><br><span class="line"><span class="string">      &lt;Response [200]&gt;</span></span><br><span class="line"><span class="string">    """</span></span><br><span class="line"></span><br><span class="line">    __attrs__ = [</span><br><span class="line">        <span class="string">'headers'</span>, <span class="string">'cookies'</span>, <span class="string">'auth'</span>, <span class="string">'proxies'</span>, <span class="string">'hooks'</span>, <span class="string">'params'</span>, <span class="string">'verify'</span>,</span><br><span class="line">        <span class="string">'cert'</span>, <span class="string">'prefetch'</span>, <span class="string">'adapters'</span>, <span class="string">'stream'</span>, <span class="string">'trust_env'</span>,</span><br><span class="line">        <span class="string">'max_redirects'</span>,</span><br><span class="line">    ]</span><br></pre></td></tr></table></figure>
+
+<p>这个用于提供cookie持久性、连接池和配置<br>都是实例化 Session来发起请求的  </p>
+<p>设置 包含哪些属性 <code>__attrs__</code></p>
+<p>接下来我们看 <code>__init__</code> 初始化方法  </p>
+<p>比较多  </p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 设置默认清头</span></span><br><span class="line">self.headers = default_headers()</span><br><span class="line"><span class="comment"># default_headers</span></span><br><span class="line"><span class="keyword">return</span> CaseInsensitiveDict(&#123;</span><br><span class="line">    <span class="string">'User-Agent'</span>: default_user_agent(),</span><br><span class="line">    <span class="string">'Accept-Encoding'</span>: <span class="string">', '</span>.join((<span class="string">'gzip'</span>, <span class="string">'deflate'</span>)),</span><br><span class="line">    <span class="string">'Accept'</span>: <span class="string">'*/*'</span>,</span><br><span class="line">    <span class="string">'Connection'</span>: <span class="string">'keep-alive'</span>,</span><br><span class="line">&#125;)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 这里可以看到 返回的头部字典是一个 CaseInsensitiveDict 类型  </span></span><br><span class="line"><span class="comment"># 这是一个不区分大小写的字典  </span></span><br><span class="line"><span class="comment"># 实现了字典的所有方式 所有键都应该是字符串 </span></span><br><span class="line"><span class="comment"># iter(instance), keys(), items(), iterkeys(), iteritems()都会返回原有的信息（即大小写敏感），而查询和判断是否包含于则是大小写不敏感的</span></span><br><span class="line"><span class="comment"># 详细的分析可以看这篇 https://zhuanlan.zhihu.com/p/53138686  </span></span><br><span class="line"><span class="comment"># 这个就是如果直接str() 把request头转字符串会报错的问题根本原因</span></span><br></pre></td></tr></table></figure>
+
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 默认的身份验证</span></span><br><span class="line">self.auth = <span class="literal">None</span></span><br></pre></td></tr></table></figure>
+
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 代理</span></span><br><span class="line">self.proxies = &#123;&#125;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 事件动作钩子</span></span><br><span class="line">self.hooks = default_hooks()</span><br><span class="line"></span><br><span class="line"><span class="comment"># 在./hooks.py</span></span><br><span class="line">HOOKS = [<span class="string">'response'</span>]</span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">default_hooks</span><span class="params">()</span>:</span></span><br><span class="line">    <span class="keyword">return</span> &#123;event: [] <span class="keyword">for</span> event <span class="keyword">in</span> HOOKS&#125;</span><br><span class="line"><span class="comment"># 对响应hooks</span></span><br></pre></td></tr></table></figure>
+
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 参数</span></span><br><span class="line">self.params = &#123;&#125;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 默认响应流</span></span><br><span class="line">self.stream = <span class="literal">False</span></span><br></pre></td></tr></table></figure>
+
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 默认是对ssl验证 </span></span><br><span class="line">self.verify = <span class="literal">True</span></span><br></pre></td></tr></table></figure>
+
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 默认证书</span></span><br><span class="line">self.cert = <span class="literal">None</span></span><br></pre></td></tr></table></figure>
+
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 允许的最大重定向数  30</span></span><br><span class="line">self.max_redirects = DEFAULT_REDIRECT_LIMIT</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 代理的身份验证</span></span><br><span class="line">self.trust_env = <span class="literal">True</span></span><br></pre></td></tr></table></figure>
+
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># cookiejar 对cookie的管理</span></span><br><span class="line"><span class="comment"># RequestsCookieJar</span></span><br><span class="line">self.cookies = cookiejar_from_dict(&#123;&#125;)</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 默认适配器 是一个有序字典 </span></span><br><span class="line">self.adapters = OrderedDict()</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 将连接适配器注册到前缀适配器按前缀长度降序排序</span></span><br><span class="line"><span class="comment"># </span></span><br><span class="line">self.mount(<span class="string">'https://'</span>, HTTPAdapter())</span><br><span class="line">self.mount(<span class="string">'http://'</span>, HTTPAdapter())</span><br></pre></td></tr></table></figure>
+
+<p>重写了 <strong>enter</strong> 方法 和 <strong>exit</strong>方法<br>这样可用于 with open 来操作 也就是自动关闭</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">__enter__</span><span class="params">(self)</span>:</span></span><br><span class="line">    <span class="keyword">return</span> self</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">__exit__</span><span class="params">(self, *args)</span>:</span></span><br><span class="line">    self.close()</span><br></pre></td></tr></table></figure>
+
+<p>以上就是 <strong>init</strong><br>接下来  </p>
+<h2 id="如果我们正常一个get请求是怎样的"><a href="#如果我们正常一个get请求是怎样的" class="headerlink" title="如果我们正常一个get请求是怎样的"></a>如果我们正常一个get请求是怎样的</h2><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">get</span><span class="params">(self, url, **kwargs)</span>:</span></span><br><span class="line">    <span class="string">r"""Sends a GET request. Returns :class:`Response` object.</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">    :param url: URL for the new :class:`Request` object.</span></span><br><span class="line"><span class="string">    :param \*\*kwargs: Optional arguments that ``request`` takes.</span></span><br><span class="line"><span class="string">    :rtype: requests.Response</span></span><br><span class="line"><span class="string">    """</span></span><br><span class="line"></span><br><span class="line">    kwargs.setdefault(<span class="string">'allow_redirects'</span>, <span class="literal">True</span>)</span><br><span class="line">    <span class="keyword">return</span> self.request(<span class="string">'GET'</span>, url, **kwargs)</span><br><span class="line">```  </span><br><span class="line"></span><br><span class="line">其中 设置 `kwargs.setdefault(<span class="string">'allow_redirects'</span>, <span class="literal">True</span>)`  </span><br><span class="line">设置默认allow_redirects 为<span class="literal">True</span> 即默认运行重定向  </span><br><span class="line">返回 self.request 跟入  </span><br><span class="line"></span><br><span class="line">request 参数很多 如下: </span><br><span class="line"></span><br><span class="line">``` python</span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">request</span><span class="params">(self, method, url,</span></span></span><br><span class="line"><span class="function"><span class="params">            params=None, data=None, headers=None, cookies=None, files=None,</span></span></span><br><span class="line"><span class="function"><span class="params">            auth=None, timeout=None, allow_redirects=True, proxies=None,</span></span></span><br><span class="line"><span class="function"><span class="params">            hooks=None, stream=None, verify=None, cert=None, json=None)</span>:</span></span><br></pre></td></tr></table></figure>
+
+<p>如下注释</p>
+<p>还可以看文档 <a href="https://2.python-requests.org//zh_CN/latest/api.html" target="_blank" rel="noopener">https://2.python-requests.org//zh_CN/latest/api.html</a>  </p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="string">"""</span></span><br><span class="line"><span class="string">:param method: 请求模式 get post等</span></span><br><span class="line"><span class="string">:param url: url</span></span><br><span class="line"><span class="string">:param params: (可选)要在查询中发送的字典或字节</span></span><br><span class="line"><span class="string">:param data:(可选)字典、元组列表、字节或类似文件</span></span><br><span class="line"><span class="string">:param json:(可选) 发送的json</span></span><br><span class="line"><span class="string">:param headers: (可选)字典请求头</span></span><br><span class="line"><span class="string">:param cookies: (可选)cookie</span></span><br><span class="line"><span class="string">:param files:(可选) "filename"字典：类文件对象``</span></span><br><span class="line"><span class="string">:param auth: (可选)）验证元组或可调用以启用 基本/摘要/自定义http身份验证。</span></span><br><span class="line"><span class="string">:param timeout: (可选) 超时时间 float</span></span><br><span class="line"><span class="string">:param allow_redirects: (可选) 允许重定向 默认允许</span></span><br><span class="line"><span class="string">:param proxies: (可选) 代理</span></span><br><span class="line"><span class="string">:param stream: (可选) 默认为True，获取body立即下载开关，为False会立即下载响应头和响应体；为True时会先下载响应头，当Reponse调用content方法时才下载响应体</span></span><br><span class="line"><span class="string">:param verify: (可选) 默认为True，认证SSL证书开关；为True时会验证SSL证书，也可以使用cert参数提供一个CA_BUNDLE路径；为False时，忽略SSL验证</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">:rtype: requests.Response</span></span><br><span class="line"><span class="string">"""</span></span><br></pre></td></tr></table></figure>
+
+<p>创建一个 Request对象  </p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">req = Request(</span><br><span class="line">    method=method.upper(),</span><br><span class="line">    url=url,</span><br><span class="line">    headers=headers,</span><br><span class="line">    files=files,</span><br><span class="line">    data=data <span class="keyword">or</span> &#123;&#125;,</span><br><span class="line">    json=json,</span><br><span class="line">    params=params <span class="keyword">or</span> &#123;&#125;,</span><br><span class="line">    auth=auth,</span><br><span class="line">    cookies=cookies,</span><br><span class="line">    hooks=hooks,</span><br><span class="line">)</span><br></pre></td></tr></table></figure>
+
+<h2 id="Request"><a href="#Request" class="headerlink" title="Request"></a>Request</h2><p>Request 是从 models导入的<br><code>from .models import Request, PreparedRequest, DEFAULT_REDIRECT_LIMIT</code><br>我们跟入查看下<br>在 198行位置  </p>
+<p>参数就是上面session中那些传入的参数  </p>
+<p>对于直接打印输出的是在这  </p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">__repr__</span><span class="params">(self)</span>:</span></span><br><span class="line">    <span class="keyword">return</span> <span class="string">'&lt;Request [%s]&gt;'</span> % (self.method)</span><br></pre></td></tr></table></figure>
+
+<p>在session的request方法中 是直接获取初始化的request对象<br>后调用 prepare_request方法<br><code>prep = self.prepare_request(req)</code>  </p>
+<p>这个方法会返回 requests.PreparedRequest<br>正常来说直接调用 Request的 prepare方法也是返回 PreparedRequest实例的对象<br>那为啥又要回到session创建呢<br>继续往下看<br>添加cookie, auth</p>
+<p>然后创建 PreparedRequest 实例<br>区别是在创建的时候使用了方法 <code>merge_setting</code> 对一些参数处理  </p>
+<p>即是把 request的和session的参数合并到一起再创建这个 PreparedRequest实例  </p>
+<p>models下的Request 的创建 <code>PreparedRequest</code> 实例</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">prepare</span><span class="params">(self)</span>:</span></span><br><span class="line">    <span class="string">"""Constructs a :class:`PreparedRequest &lt;PreparedRequest&gt;` for transmission and returns it."""</span></span><br><span class="line">    p = PreparedRequest()</span><br><span class="line">    p.prepare(</span><br><span class="line">        method=self.method,</span><br><span class="line">        url=self.url,</span><br><span class="line">        headers=self.headers,</span><br><span class="line">        files=self.files,</span><br><span class="line">        data=self.data,</span><br><span class="line">        json=self.json,</span><br><span class="line">        params=self.params,</span><br><span class="line">        auth=self.auth,</span><br><span class="line">        cookies=self.cookies,</span><br><span class="line">        hooks=self.hooks,</span><br><span class="line">    )</span><br><span class="line">    <span class="keyword">return</span> p</span><br></pre></td></tr></table></figure>
+
+<p>session下的的=创建 <code>PreparedRequest</code> 实例</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">p = PreparedRequest()</span><br><span class="line">p.prepare(</span><br><span class="line">    method=request.method.upper(),</span><br><span class="line">    url=request.url,</span><br><span class="line">    files=request.files,</span><br><span class="line">    data=request.data,</span><br><span class="line">    json=request.json,</span><br><span class="line">    headers=merge_setting(request.headers, self.headers, dict_class=CaseInsensitiveDict),</span><br><span class="line">    params=merge_setting(request.params, self.params),</span><br><span class="line">    auth=merge_setting(auth, self.auth),</span><br><span class="line">    cookies=merged_cookies,</span><br><span class="line">    hooks=merge_hooks(request.hooks, self.hooks),</span><br><span class="line">)</span><br><span class="line"><span class="keyword">return</span> p</span><br></pre></td></tr></table></figure>
+
+<p>为什么没有直接一起传入参数直接创建返回一个实例而是创建完的<br>reques再合并session的数据后再创建  </p>
+<p>主要的类就是这个了 <code>PreparedRequest</code> 是一个准备的请求类  </p>
+<p>初始化就是对之前传入的参数进行初始化<br>在 models的 272行</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">PreparedRequest</span><span class="params">(RequestEncodingMixin, RequestHooksMixin)</span>:</span></span><br><span class="line">    <span class="string">"""The fully mutable :class:`PreparedRequest &lt;PreparedRequest&gt;` object,</span></span><br><span class="line"><span class="string">    containing the exact bytes that will be sent to the server.</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">    Generated from either a :class:`Request &lt;Request&gt;` object or manually.</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">    Usage::</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">      &gt;&gt;&gt; import requests</span></span><br><span class="line"><span class="string">      &gt;&gt;&gt; req = requests.Request('GET', 'https://httpbin.org/get')</span></span><br><span class="line"><span class="string">      &gt;&gt;&gt; r = req.prepare()</span></span><br><span class="line"><span class="string">      &lt;PreparedRequest [GET]&gt;</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">      &gt;&gt;&gt; s = requests.Session()</span></span><br><span class="line"><span class="string">      &gt;&gt;&gt; s.send(r)</span></span><br><span class="line"><span class="string">      &lt;Response [200]&gt;</span></span><br><span class="line"><span class="string">    """</span></span><br></pre></td></tr></table></figure>
+
+<p>返回 PreparedRequest 实例后<br>更新要发送的数据字典并调用 send方法<br>跟入send方法  (发送 PreparedRequest)<br>各种获取request的参数值  </p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">send</span><span class="params">(self, request, **kwargs)</span>:</span></span><br><span class="line">    <span class="string">"""Send a given PreparedRequest.</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">    :rtype: requests.Response</span></span><br><span class="line"><span class="string">    """</span></span><br><span class="line">    <span class="comment"># Set defaults that the hooks can utilize to ensure they always have</span></span><br><span class="line">    <span class="comment"># the correct parameters to reproduce the previous request.</span></span><br><span class="line">    kwargs.setdefault(<span class="string">'stream'</span>, self.stream)</span><br><span class="line">    kwargs.setdefault(<span class="string">'verify'</span>, self.verify)</span><br><span class="line">    kwargs.setdefault(<span class="string">'cert'</span>, self.cert)</span><br><span class="line">    kwargs.setdefault(<span class="string">'proxies'</span>, self.proxies)</span><br><span class="line"></span><br><span class="line">    <span class="comment"># It's possible that users might accidentally send a Request object.</span></span><br><span class="line">    <span class="comment"># Guard against that specific failure case.</span></span><br><span class="line">    <span class="keyword">if</span> isinstance(request, Request):</span><br><span class="line">        <span class="keyword">raise</span> ValueError(<span class="string">'You can only send PreparedRequests.'</span>)</span><br><span class="line"></span><br><span class="line">    <span class="comment"># Set up variables needed for resolve_redirects and dispatching of hooks</span></span><br><span class="line">    allow_redirects = kwargs.pop(<span class="string">'allow_redirects'</span>, <span class="literal">True</span>)</span><br><span class="line">    stream = kwargs.get(<span class="string">'stream'</span>)</span><br><span class="line">    hooks = request.hooks</span><br><span class="line"></span><br><span class="line">    <span class="comment"># Get the appropriate adapter to use</span></span><br><span class="line">    adapter = self.get_adapter(url=request.url)</span><br><span class="line"></span><br><span class="line">    <span class="comment"># Start time (approximately) of the request</span></span><br><span class="line">    start = preferred_clock()</span><br><span class="line"></span><br><span class="line">    <span class="comment"># Send the request</span></span><br><span class="line">    r = adapter.send(request, **kwargs)</span><br></pre></td></tr></table></figure>
+
+<p>对于 start 即请求的开始时间如下获取  </p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> sys.platform == <span class="string">'win32'</span>:</span><br><span class="line">    <span class="keyword">try</span>:  <span class="comment"># Python 3.4+</span></span><br><span class="line">        preferred_clock = time.perf_counter</span><br><span class="line">    <span class="keyword">except</span> AttributeError:  <span class="comment"># Earlier than Python 3.</span></span><br><span class="line">        preferred_clock = time.clock</span><br><span class="line"><span class="keyword">else</span>:</span><br><span class="line">    preferred_clock = time.time</span><br></pre></td></tr></table></figure>
+
+<p>然后调用 发起请求  </p>
+<p><code>r = adapter.send(request, **kwargs)</code>  </p>
+<p>get_adapter 返回的是 adapters.BaseAdapter  </p>
+<p>调用的send方法就是 这个  </p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">BaseAdapter</span><span class="params">(object)</span>:</span></span><br><span class="line">    <span class="string">"""The Base Transport Adapter"""</span></span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__init__</span><span class="params">(self)</span>:</span></span><br><span class="line">        super(BaseAdapter, self).__init__()</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">send</span><span class="params">(self, request, stream=False, timeout=None, verify=True,</span></span></span><br><span class="line"><span class="function"><span class="params">             cert=None, proxies=None)</span>:</span></span><br><span class="line">        <span class="string">"""Sends PreparedRequest object. Returns Response object.</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">        :param request: The :class:`PreparedRequest &lt;PreparedRequest&gt;` being sent.</span></span><br><span class="line"><span class="string">        :param stream: (optional) Whether to stream the request content.</span></span><br><span class="line"><span class="string">        :param timeout: (optional) How long to wait for the server to send</span></span><br><span class="line"><span class="string">            data before giving up, as a float, or a :ref:`(connect timeout,</span></span><br><span class="line"><span class="string">            read timeout) &lt;timeouts&gt;` tuple.</span></span><br><span class="line"><span class="string">        :type timeout: float or tuple</span></span><br><span class="line"><span class="string">        :param verify: (optional) Either a boolean, in which case it controls whether we verify</span></span><br><span class="line"><span class="string">            the server's TLS certificate, or a string, in which case it must be a path</span></span><br><span class="line"><span class="string">            to a CA bundle to use</span></span><br><span class="line"><span class="string">        :param cert: (optional) Any user-provided SSL certificate to be trusted.</span></span><br><span class="line"><span class="string">        :param proxies: (optional) The proxies dictionary to apply to the request.</span></span><br><span class="line"><span class="string">        """</span></span><br><span class="line">        <span class="keyword">raise</span> NotImplementedError</span><br></pre></td></tr></table></figure>
+
+<p>调用的是这个发送 </p>
+<p>但是如果是基类的话怎么有这个send方法呢  </p>
+<p>那就要往回看<br>设置默认的适配器  </p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Default connection adapters.</span></span><br><span class="line">self.adapters = OrderedDict()</span><br><span class="line">self.mount(<span class="string">'https://'</span>, HTTPAdapter())</span><br><span class="line">self.mount(<span class="string">'http://'</span>, HTTPAdapter())</span><br><span class="line">```  </span><br><span class="line">对于前缀是如上的对应值为 HTTPAdapter 适配器  </span><br><span class="line">这个适配器是继承的 BaseAdapter 适配器  </span><br><span class="line"></span><br><span class="line">所以 get_adapter 方法 返回的适配器即是 HTTPAdapter  </span><br><span class="line"></span><br><span class="line"></span><br><span class="line">```python</span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">get_adapter</span><span class="params">(self, url)</span>:</span></span><br><span class="line">    <span class="string">"""</span></span><br><span class="line"><span class="string">    Returns the appropriate connection adapter for the given URL.</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">    :rtype: requests.adapters.BaseAdapter</span></span><br><span class="line"><span class="string">    """</span></span><br><span class="line">    <span class="keyword">for</span> (prefix, adapter) <span class="keyword">in</span> self.adapters.items():</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> url.lower().startswith(prefix.lower()):</span><br><span class="line">            <span class="keyword">return</span> adapter</span><br><span class="line"></span><br><span class="line">    <span class="comment"># Nothing matches :-/</span></span><br><span class="line">    <span class="keyword">raise</span> InvalidSchema(<span class="string">"No connection adapters were found for '%s'"</span> % url)</span><br></pre></td></tr></table></figure>
+
+<p>使用适配器的概念，匹配前缀url来使用对于的适配器来操作  </p>
+<p>这样 我们就要看 HTTPAdapter  </p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="keyword">import</span> requests</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>s = requests.Session()</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>a = requests.adapters.HTTPAdapter(max_retries=<span class="number">3</span>)</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>s.mount(<span class="string">'http://'</span>, a)</span><br></pre></td></tr></table></figure>
+
+<p>可以看到使用就是这样的  </p>
+<p>可以看到可以获取的几个属性  </p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">__attrs__ = [<span class="string">'max_retries'</span>, <span class="string">'config'</span>, <span class="string">'_pool_connections'</span>, <span class="string">'_pool_maxsize'</span>,</span><br><span class="line">             <span class="string">'_pool_block'</span>]</span><br></pre></td></tr></table></figure>
+
+<p>初始化可以看到是一个连接池  </p>
+<p><code>self.init_poolmanager(pool_connections, pool_maxsize, block=pool_block)</code>  </p>
+<p>初始化urllib3池管理器  </p>
+<p>对urlli3进行了连接池的管理  </p>
+<p>创建 PoolManager</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">self.poolmanager = PoolManager(num_pools=connections, maxsize=maxsize,block=block, strict=<span class="literal">True</span>, **pool_kwargs)</span><br></pre></td></tr></table></figure>
+
+<p>这个 PoolManager 是urllib3中的  </p>
+<p>那么继续看下send方法  </p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">send</span><span class="params">(self, request, stream=False, timeout=None, verify=True, cert=None, proxies=None)</span>:</span></span><br><span class="line">    <span class="string">"""Sends PreparedRequest object. Returns Response object.</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">    :param request: The :class:`PreparedRequest &lt;PreparedRequest&gt;` being sent.</span></span><br><span class="line"><span class="string">    :param stream: (optional) Whether to stream the request content.</span></span><br><span class="line"><span class="string">    :param timeout: (optional) How long to wait for the server to send</span></span><br><span class="line"><span class="string">        data before giving up, as a float, or a :ref:`(connect timeout,</span></span><br><span class="line"><span class="string">        read timeout) &lt;timeouts&gt;` tuple.</span></span><br><span class="line"><span class="string">    :type timeout: float or tuple or urllib3 Timeout object</span></span><br><span class="line"><span class="string">    :param verify: (optional) Either a boolean, in which case it controls whether</span></span><br><span class="line"><span class="string">        we verify the server's TLS certificate, or a string, in which case it</span></span><br><span class="line"><span class="string">        must be a path to a CA bundle to use</span></span><br><span class="line"><span class="string">    :param cert: (optional) Any user-provided SSL certificate to be trusted.</span></span><br><span class="line"><span class="string">    :param proxies: (optional) The proxies dictionary to apply to the request.</span></span><br><span class="line"><span class="string">    :rtype: requests.Response</span></span><br><span class="line"><span class="string">    """</span></span><br></pre></td></tr></table></figure>
+
+<p>首先创建一个连接对象  </p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">try</span>:</span><br><span class="line">    conn = self.get_connection(request.url, proxies)</span><br><span class="line"><span class="keyword">except</span> LocationValueError <span class="keyword">as</span> e:</span><br><span class="line">    <span class="keyword">raise</span> InvalidURL(e, request=request)</span><br></pre></td></tr></table></figure>
+
+<p>使用urllib3的poolmanager的 connection_from_url方法<br>返回一个conn<br><code>conn = self.poolmanager.connection_from_url(url)</code>  </p>
+<p>证书 请求头添加</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">self.cert_verify(conn, request.url, verify, cert)</span><br><span class="line">url = self.request_url(request, proxies)</span><br><span class="line">self.add_headers(request, stream=stream, timeout=timeout, verify=verify, cert=cert, proxies=proxies)</span><br></pre></td></tr></table></figure>
+
+<p><code>chunked = not (request.body is None or &#39;Content-Length&#39; in request.headers)</code></p>
+<p>如果 请求的body为空或者 请求头中有 Content-Length字段则如下  </p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">resp = conn.urlopen(</span><br><span class="line">    method=request.method,</span><br><span class="line">    url=url,</span><br><span class="line">    body=request.body,</span><br><span class="line">    headers=request.headers,</span><br><span class="line">    redirect=<span class="literal">False</span>,</span><br><span class="line">    assert_same_host=<span class="literal">False</span>,</span><br><span class="line">    preload_content=<span class="literal">False</span>,</span><br><span class="line">    decode_content=<span class="literal">False</span>,</span><br><span class="line">    retries=self.max_retries,</span><br><span class="line">    timeout=timeout</span><br><span class="line">)</span><br></pre></td></tr></table></figure>
+
+<p>返回resp对象</p>
+<p>否则</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line">low_conn = conn._get_conn(timeout=DEFAULT_POOL_TIMEOUT)</span><br><span class="line"></span><br><span class="line"><span class="keyword">try</span>:</span><br><span class="line">    low_conn.putrequest(request.method,</span><br><span class="line">                        url,</span><br><span class="line">                        skip_accept_encoding=<span class="literal">True</span>)</span><br><span class="line"></span><br><span class="line">    <span class="keyword">for</span> header, value <span class="keyword">in</span> request.headers.items():</span><br><span class="line">        low_conn.putheader(header, value)</span><br><span class="line"></span><br><span class="line">    low_conn.endheaders()</span><br><span class="line">    <span class="comment"># 对请求的body进行换行处理</span></span><br><span class="line">    <span class="keyword">for</span> i <span class="keyword">in</span> request.body:</span><br><span class="line">        low_conn.send(hex(len(i))[<span class="number">2</span>:].encode(<span class="string">'utf-8'</span>))</span><br><span class="line">        low_conn.send(<span class="string">b'\r\n'</span>)</span><br><span class="line">        low_conn.send(i)</span><br><span class="line">        low_conn.send(<span class="string">b'\r\n'</span>)</span><br><span class="line">    low_conn.send(<span class="string">b'0\r\n\r\n'</span>)</span><br><span class="line"></span><br><span class="line">    <span class="comment"># Receive the response from the server</span></span><br><span class="line">    <span class="keyword">try</span>:</span><br><span class="line">        <span class="comment"># For Python 2.7, use buffering of HTTP responses</span></span><br><span class="line">        r = low_conn.getresponse(buffering=<span class="literal">True</span>)</span><br><span class="line">    <span class="keyword">except</span> TypeError:</span><br><span class="line">        <span class="comment"># For compatibility with Python 3.3+</span></span><br><span class="line">        r = low_conn.getresponse()</span><br><span class="line"></span><br><span class="line">    resp = HTTPResponse.from_httplib(</span><br><span class="line">        r,</span><br><span class="line">        pool=conn,</span><br><span class="line">        connection=low_conn,</span><br><span class="line">        preload_content=<span class="literal">False</span>,</span><br><span class="line">        decode_content=<span class="literal">False</span></span><br><span class="line">    )</span><br></pre></td></tr></table></figure>
+
+<p>接下来各种异常捕获  </p>
+<p>很详细可以快速判断问题所在  </p>
+<p>最后返回  </p>
+<p><code>return self.build_response(request, resp)</code>  </p>
+<p>build_response即是对响应的封装<br>最后返回response对象  </p>
+<p>一个完整的get请求。</p>
+<p>下面重新梳理下  </p>
+<p>api中对request的get post 等封装<br>request的实质是session.request<br>再往里是因为HTTPAdapter适配器<br>里面实质还是使用的urllib3的请求<br>对请求和响应做了很多封装<br>来回导入调用很多  </p>
+<p>还有很多地方模块细节没有细读 留作下次再深入一些读  </p>
+
+      
+    </div>
+
+    
+
+    
+      
+    
+
+    
+    
+    
+
+    
+
+    
+      
+    
+    
+
+    
+
+    <footer class="post-footer">
+      
+        
+          
+        
+        <div class="post-tags">
+          
+            <a href="/tags/源码/" rel="tag"># 源码</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2019/09/25/redis实战读书笔记-一/" rel="prev" title="redis实战读书笔记(一)">
+                redis实战读书笔记(一) <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+  </div>
+
+
+          </div>
+          
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  
+    <img class="site-author-image" itemprop="image" src="/images/avatar.jpg" alt="Recar">
+  
+  <p class="site-author-name" itemprop="name">Recar</p>
+  <div class="site-description motion-element" itemprop="description">年轻人就应该多读源码多读书</div>
+</div>
+
+
+  <nav class="site-state motion-element">
+    
+      <div class="site-state-item site-state-posts">
+        
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">18</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+    
+
+    
+
+    
+      
+      
+      <div class="site-state-item site-state-tags">
+        
+        
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+        <span class="site-state-item-count">7</span>
+        <span class="site-state-item-name">标签</span>
+        
+      </div>
+    
+  </nav>
+
+
+
+
+
+
+
+
+
+
+
+
+
+          
+          
+        </div>
+      </div>
+
+      
+      <!--noindex-->
+        <div class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+            
+            
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#request方法参数"><span class="nav-number">1.</span> <span class="nav-text">request方法参数</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#get方法参数"><span class="nav-number">2.</span> <span class="nav-text">get方法参数</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#如果我们正常一个get请求是怎样的"><span class="nav-number">3.</span> <span class="nav-text">如果我们正常一个get请求是怎样的</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Request"><span class="nav-number">4.</span> <span class="nav-text">Request</span></a></li></ol></div>
+            
+
+          </div>
+        </div>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2021</span>
+  <span class="with-love" id="animate">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Recar</span>
+
+  
+
+  
+</div>
+
+
+  <div class="powered-by">由 <a href="https://hexo.io" class="theme-link" rel="noopener" target="_blank">Hexo</a> 强力驱动 v3.9.0</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 – <a href="https://theme-next.org" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a> v7.2.0</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+          <span id="scrollpercent"><span>0</span>%</span>
+        
+      </div>
+    
+
+    
+
+    
+
+    
+
+  </div>
+
+  
+
+<script>
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+
+
+
+
+
+
+
+
+
+  
+  <script src="/lib/jquery/index.js?v=3.4.1"></script>
+
+  
+  <script src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+
+
+
+  <script src="/js/utils.js?v=7.2.0"></script>
+
+  <script src="/js/motion.js?v=7.2.0"></script>
+
+
+
+  
+  
+
+
+  <script src="/js/affix.js?v=7.2.0"></script>
+
+  <script src="/js/schemes/pisces.js?v=7.2.0"></script>
+
+
+
+
+  
+  <script src="/js/scrollspy.js?v=7.2.0"></script>
+<script src="/js/post-details.js?v=7.2.0"></script>
+
+
+
+  <script src="/js/next-boot.js?v=7.2.0"></script>
+
+  
+
+  
+
+  
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<script>
+// GET RESPONSIVE HEIGHT PASSED FROM IFRAME
+
+window.addEventListener("message", function(e) {
+  var data = e.data;
+  if ((typeof data === 'string') && (data.indexOf('ciu_embed') > -1)) {
+    var featureID = data.split(':')[1];
+    var height = data.split(':')[2];
+    $(`iframe[data-feature=${featureID}]`).height(parseInt(height) + 30);
+  }
+}, false);
+</script>
+
+
+
+
+
+
+
+
+  
+
+</body>
+</html>

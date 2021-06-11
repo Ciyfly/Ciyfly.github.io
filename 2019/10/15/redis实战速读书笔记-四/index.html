@@ -1,0 +1,905 @@
+<!DOCTYPE html>
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+<html class="theme-next gemini use-motion" lang="zh-CN">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=7.2.0">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=7.2.0">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=7.2.0">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=7.2.0" color="#222">
+
+
+
+
+
+
+<link rel="stylesheet" href="/css/main.css?v=7.2.0">
+
+
+
+
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css?v=4.7.0">
+
+
+
+
+
+
+
+
+<script id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '7.2.0',
+    sidebar: {"position":"left","display":"post","offset":12,"onmobile":false},
+    back2top: {"enable":true,"sidebar":false,"scrollpercent":true},
+    copycode: {"enable":false,"show_result":false,"style":null},
+    fancybox: false,
+    mediumzoom: false,
+    lazyload: false,
+    pangu: false,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    },
+    translation: {
+      copy_button: '复制',
+      copy_success: '复制成功',
+      copy_failure: '复制失败'
+    }
+  };
+</script>
+
+  <meta name="description" content="redis第四章的笔记 主要是关于持久化的相关命令 快照 aof 还有事务的一些事例">
+<meta name="keywords" content="读书笔记">
+<meta property="og:type" content="article">
+<meta property="og:title" content="redis实战速读书笔记(四)">
+<meta property="og:url" content="http://yoursite.com/2019/10/15/redis实战速读书笔记-四/index.html">
+<meta property="og:site_name" content="Recar的笔记">
+<meta property="og:description" content="redis第四章的笔记 主要是关于持久化的相关命令 快照 aof 还有事务的一些事例">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:image" content="http://yoursite.com/2019/10/15/redis实战速读书笔记-四/redis%E4%B8%BB%E4%BB%8E%E5%90%8C%E6%AD%A5%E6%AD%A5%E9%AA%A4.jpg">
+<meta property="og:image" content="http://yoursite.com/2019/10/15/redis实战速读书笔记-四/Redis%E4%B8%BB%E4%BB%8E.jpg">
+<meta property="og:image" content="http://yoursite.com/2019/10/15/redis实战速读书笔记-四/%E7%94%A8%E6%88%B7%E4%BF%A1%E6%81%AF%E5%92%8C%E5%8C%85%E8%A3%B9.jpg">
+<meta property="og:image" content="http://yoursite.com/2019/10/15/redis实战速读书笔记-四/%E5%95%86%E5%93%81%E5%94%AE%E5%8D%96%E6%9C%89%E5%BA%8F%E9%9B%86%E5%90%88.jpg">
+<meta property="og:image" content="http://yoursite.com/2019/10/15/redis实战速读书笔记-四/%E6%80%A7%E8%83%BD%E9%97%AE%E9%A2%98%E5%8E%9F%E5%9B%A0.jpg">
+<meta property="og:updated_time" content="2021-06-11T10:33:06.317Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="redis实战速读书笔记(四)">
+<meta name="twitter:description" content="redis第四章的笔记 主要是关于持久化的相关命令 快照 aof 还有事务的一些事例">
+<meta name="twitter:image" content="http://yoursite.com/2019/10/15/redis实战速读书笔记-四/redis%E4%B8%BB%E4%BB%8E%E5%90%8C%E6%AD%A5%E6%AD%A5%E9%AA%A4.jpg">
+
+
+
+
+
+  
+  
+  <link rel="canonical" href="http://yoursite.com/2019/10/15/redis实战速读书笔记-四/">
+
+
+
+<script id="page.configurations">
+  CONFIG.page = {
+    sidebar: "",
+  };
+</script>
+
+  
+  <title>redis实战速读书笔记(四) | Recar的笔记</title>
+  
+
+
+
+
+
+
+  <script>
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?f6Wf4b00fa957d7290583a86b0d8c2de1";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .motion-element,
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-title { opacity: initial; }
+
+  .use-motion .logo,
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-CN">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Recar的笔记</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+    
+    
+  </div>
+
+  <div class="site-nav-toggle">
+    <button aria-label="切换导航栏">
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  
+    <ul id="menu" class="menu">
+      
+        
+        
+        
+          
+          <li class="menu-item menu-item-home">
+
+    
+    
+      
+    
+
+    
+
+    <a href="/" rel="section"><i class="menu-item-icon fa fa-fw fa-home"></i> <br>首页</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-about">
+
+    
+    
+      
+    
+
+    
+
+    <a href="/about/" rel="section"><i class="menu-item-icon fa fa-fw fa-user"></i> <br>关于</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-tags">
+
+    
+    
+      
+    
+
+    
+
+    <a href="/tags/" rel="section"><i class="menu-item-icon fa fa-fw fa-tags"></i> <br>标签</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-archives">
+
+    
+    
+      
+    
+
+    
+
+    <a href="/archives/" rel="section"><i class="menu-item-icon fa fa-fw fa-archive"></i> <br>归档</a>
+
+  </li>
+
+      
+      
+    </ul>
+  
+
+  
+
+  
+</nav>
+
+
+
+</div>
+    </header>
+
+    
+  
+  
+
+  
+
+  <a href="https://github.com/Ciyfly" class="github-corner" title="Follow me on GitHub" aria-label="Follow me on GitHub" rel="noopener" target="_blank"><svg width="80" height="80" viewbox="0 0 250 250" aria-hidden="true"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"/><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"/><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"/></svg></a>
+
+
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+            
+
+          
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+      
+
+  
+  
+  
+
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2019/10/15/redis实战速读书笔记-四/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Recar">
+      <meta itemprop="description" content="年轻人就应该多读源码多读书">
+      <meta itemprop="image" content="/images/avatar.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Recar的笔记">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">redis实战速读书笔记(四)
+
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+
+          
+          
+          
+
+          
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+
+              
+                
+              
+
+              <time title="创建时间：2019-10-15 17:41:22" itemprop="dateCreated datePublished" datetime="2019-10-15T17:41:22+00:00">2019-10-15</time>
+            </span>
+          
+
+          
+            
+
+            
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">更新于</span>
+                
+                <time title="修改时间：2021-06-11 10:33:06" itemprop="dateModified" datetime="2021-06-11T10:33:06+00:00">2021-06-11</time>
+              </span>
+            
+          
+
+          
+
+          
+          
+
+          
+
+          
+
+          <br>
+          
+
+          
+
+          
+            <div class="post-description">redis第四章的笔记 主要是关于持久化的相关命令 快照 aof 还有事务的一些事例</div>
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h1 id="第四章-数据安全与性能保障"><a href="#第四章-数据安全与性能保障" class="headerlink" title="第四章 数据安全与性能保障"></a>第四章 数据安全与性能保障</h1><h2 id="持久化选项"><a href="#持久化选项" class="headerlink" title="持久化选项"></a>持久化选项</h2><p>Redis 提供了两种不同的持久化方法来将数据存储到硬盘里面  </p>
+<ol>
+<li>快照 </li>
+</ol>
+<p>他可以将存在于某一时刻的所有数据都写入硬盘里面</p>
+<ol start="2">
+<li>只追加文件(AOF)</li>
+</ol>
+<p>他会在执行命令时 将被执行的写命令复制到硬盘里面  </p>
+<p>这两种持久化方法即可以同时使用又可以单独使用  </p>
+<p>将内存中的数据存储到硬盘是为了之后重用数据<br>或者是为了防止系统故障而将数据备份到一个远程位置<br>存储在Redis的数据有可能是经过长时间计算出来的 如果aof 需要再重新计算<br>有可能是数十亿行日志进行聚合分析得出的结果  </p>
+<h3 id="快照持久化"><a href="#快照持久化" class="headerlink" title="快照持久化"></a>快照持久化</h3><p>创建某个时间点上的副本 并且可以对快照进行备份 将快照复制到其他服务器<br>从而创建具有相同数据的服务器副本 或者留在本地以便重启服务器时使用  </p>
+<p>快照被写入 dbfilename选项指定的文件里面  </p>
+<p>创建快照方法如下:</p>
+<ol>
+<li>客户端向Redis发送 <code>BGSAVE</code> 命令来创建一个快照 (windows平台不支持 因为是调用fork来写入)</li>
+<li>配置 <code>save 60 10000</code> 当60秒之内有10000次写入这个条件被满足时 redis会自动触发 BGSAVE 命令 (可以设置多个触发条件)</li>
+<li>当 Redis 通过 <code>SHUTDOWN</code> 命令接收到关闭服务器的请求时 或者接收到标准 TERM 信号时 会执行一个SAVE 命令 阻塞所有客户端 完成后关闭服务器</li>
+<li>当一个Redis 服务器连接另一个Redis服务器 并向对方发送SYNC命令来开始一次复制操作的时候 此时没有执行 BGSAVE并且也没有刚刚执行完 那么会执行 BGSAVE  </li>
+</ol>
+<p>快照持久化只使用于那些即使丢失一部分数据也不会造成问题的程序  </p>
+<p><code>save 900 1</code> 的意思是: 每900s只要有一次写入就进行生成快照  </p>
+<p>这个配置为什么这么配怎么配:<br>如果丢失多久的数据是可以接受的 那么就配置多少  </p>
+<p>当数据量很大的时候 创建快照的时间也很长 有可能BGSAVE  导致 系统长时间的停顿 从而导致 Redis性能降低  </p>
+<p>为了防止 Redis因为创建子进行而出现停顿 我们可以考虑关闭自动保存 转而通过手动发送 BGSAVE 或者 SAVE 进行持久化<br>也会挺淡但是可以控制停顿出现的时间 可以选择适合的时间进行 BGSAVE  </p>
+<p>如果对于程序出现来说 丢失 15分钟或者1小时甚至生成时间不能接受 可以采用 AOF的方法持久化  </p>
+<h3 id="AOF持久化"><a href="#AOF持久化" class="headerlink" title="AOF持久化"></a>AOF持久化</h3><p>AOF持久化会将被执行的写命令写到AOF文件的末尾 以此来记录数据发送的变化<br>Redis 只要执行一下AOF的所有写命令就恢复了  </p>
+<p>appendfsync  同步频率  </p>
+<p>always 每个Redis写命令都要同步写入硬盘 这样做会严重降低Redis的速度<br>everysec 每秒执行一次同步 显示地将多个写命令同步到硬盘<br>no 让操作系统来决定应该何时进行同步  </p>
+<p>always 写的次数很多但是每次只写一个命令 某些情况下会降低固态硬盘的寿命  </p>
+<p>Redis 每秒同步一次AOF文件的性能和不是要任何持久化特性时的性能相差无几<br>最多丢失1s内产生的数据  当硬盘忙于执行写入操作的时候 Redis还会优雅的放慢自己的速度以便适应硬盘的最大写入速度  </p>
+<h3 id="重写-压缩AOF文件"><a href="#重写-压缩AOF文件" class="headerlink" title="重写/压缩AOF文件"></a>重写/压缩AOF文件</h3><p>随着运行 AOF文件不断增大 而且文件很大的话还原操作执行的时间也会很长  </p>
+<p>用户可以向Redis 发送 <code>BGREWRITEAOF</code> 命令 这个命令会通过移除AOF文件中的冗余命令来重写 AOF文件  </p>
+<p>AOF 设置自动执行 BGREWRITEAOF<br>auto-aof-rewrite-percentage 100 比上一次大了100%<br>auto-aof-rewrite-min-size  64mb 大于64MB<br>这样的条件进行重写AOF文件  </p>
+<h3 id="复制"><a href="#复制" class="headerlink" title="复制"></a>复制</h3><p>尽管有多个不同的选项可以控制从服务器自身的行为 但开启从服务器所必须的选项只有 slaveof 一个<br>如果用户在启动 Redis 服务器的时候 指定了一个包含 slaveof host port 选项的配置文件 那么Redis 服务器将根据该选项给定的IP地址和端口号来连接主服务器  </p>
+<h4 id="Redis-复制的启动过程"><a href="#Redis-复制的启动过程" class="headerlink" title="Redis 复制的启动过程"></a>Redis 复制的启动过程</h4><p><img src="/2019/10/15/redis实战速读书笔记-四/redis%E4%B8%BB%E4%BB%8E%E5%90%8C%E6%AD%A5%E6%AD%A5%E9%AA%A4.jpg" alt="redis主从同步步骤">  </p>
+<p>将主服务器的快照发送到从服务器<br>将主服务器的缓冲区的写命令发送给从服务器<br>主服务器每次将写命令发送到从服务器  </p>
+<p>Redis 处理命令请求的效率会收到影响 最好让主服务器只使用 50%<del>65%的内存 留下 30%</del>45%的内存用于执行 BGSAVE命令和创建记录写命令的缓冲区  </p>
+<p><strong>设置从服务器</strong><br>用户即可以通过配置选择 SLAVEOF host port 来将一个 Redis 服务器设置为从服务器<br>还可以通过向运行中的Redis服务器发送 SLAVEOF 命令来将其设置为从服务器  </p>
+<p>如果用户使用的是 <strong>SLAVEOF 配置</strong> 那么Redis 在启动时首先会<strong>载入</strong>当前可以用的任何快照文件 或者AOF文件 然后再如上图进行复制  </p>
+<p>如果用户使用的是 <strong>SLAVEOF 命令</strong> 那么Redis 会<strong>立即尝试连接主服务器</strong> 连接成功后开始复制  </p>
+<p><strong>注意:</strong><br>从服务器在进行同步时 会清空自己的所有数据 替换成主服务器的数据  </p>
+<p>不支持多主复制  </p>
+<h3 id="主从链"><a href="#主从链" class="headerlink" title="主从链"></a>主从链</h3><p>从服务器也可以拥有自己的从服务器 从而形成主从链<br>从服务器对从服务器进行复制与主从唯一区别在于:<br>如果从服务器x拥有从服务器y 那么当从服务器x在执行 完成对快速文件的解释操作 像往常一样开始接受命令请求 的<br>时 他将端口与从服务器y的连接 导致 从服务器y需要重新连接并重新同步<br>当读请求的重要性明显高于写请求的重要性 并且读请求的数量远远超过一台Redis服务器可以处理的范围时<br>欧诺个户就需要添加新的从服务器来处理读请求 随着负载不断上升 主服务器可能会无法快速的更新所有从服务器<br>或者因为重新连接和重新同步从服务器而导致系统超载<br>为了缓解这个问题 可以创建一个由Redis 主从节点 组成的中间层来分担主服务器的复制工作  </p>
+<p><img src="/2019/10/15/redis实战速读书笔记-四/Redis%E4%B8%BB%E4%BB%8E.jpg" alt="Redis主从"><br>有三个从服务器来分担主服务器的复制工作  </p>
+<p>同时使用复制和AOF持久化来将数据持久化到多台机器上面  </p>
+<p>为了将数据保存到多台机器上面 用户首先需要为主服务设置多个从服务器 然后对每个从服务器设置 appendonly yes选项 和 appendfsync everysec 选项 (如果有需要的话 也可以对主服务器进行相同的设置) 这样的话 用户就可以让多台服务器以每秒一次的频率将数据同步到硬盘上了  </p>
+<h2 id="检验硬盘写入"><a href="#检验硬盘写入" class="headerlink" title="检验硬盘写入"></a>检验硬盘写入</h2><p>为了验证主服务器是否已经将写数据发送至从服务器 用户需要在向主服务器写入真正的数据之后<br>再向主服务器写入一个唯一的虚构值 (unique dummy value) 然后通过检查虚构值是否存在于<br>从服务器来判断写数据是否已经到达从服务器  </p>
+<p>对于每秒同步一次AOF文件的Redis服务器来说 用户总是可以通过等待1s来确保数据已经被保存到硬盘里<br>但更节约时间的做法是 检查 INFO 命令的输出结果中 aof_pending_bio_fsync 属性的值是否为0<br>如果是的话 那么就表示服务器已经把已知的所有数据都保存到硬盘里面了。  </p>
+<p>检测函数  </p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">wait_for_sync</span><span class="params">(mconn, sconn)</span>:</span></span><br><span class="line">    <span class="comment"># 将虚构值插入 主服务器</span></span><br><span class="line">    identifier = str(uuid.uuid4())</span><br><span class="line">    mconn.zadd(<span class="string">'sync:wait'</span>, identifier, time.time())</span><br><span class="line">    <span class="comment"># 等待从服务器完成同步</span></span><br><span class="line">    <span class="keyword">while</span> <span class="keyword">not</span> sconn.info()[<span class="string">'master_link_status'</span>] != <span class="string">'up'</span>:</span><br><span class="line">        time.sleep(<span class="number">0.001</span>)</span><br><span class="line">    <span class="comment"># 等待从服务器接收数据更新</span></span><br><span class="line">    <span class="keyword">while</span> <span class="keyword">not</span> sconn.zscore(<span class="string">'sync:wait'</span>, identifier):</span><br><span class="line">        time.sleep(<span class="number">0.001</span>)</span><br><span class="line">    deadline = time.time() + <span class="number">1.0</span> <span class="comment"># 最多只等待1s</span></span><br><span class="line">    <span class="keyword">while</span> time.time() &lt; deadline:</span><br><span class="line">        <span class="comment"># 检测数据更新是否已经被同步到了硬盘</span></span><br><span class="line">        <span class="keyword">if</span> sconn.info()[<span class="string">'aof_pending_bio_fsync'</span>] == <span class="number">0</span>:</span><br><span class="line">            <span class="keyword">break</span></span><br><span class="line">        time.sleep(<span class="number">0.001</span>)</span><br><span class="line">    mconn.zrem(<span class="string">'sync:wait'</span>, identifier)</span><br><span class="line">    <span class="comment"># 清理刚刚创建的 虚构值 以及之前可能留下的</span></span><br><span class="line">    mconn.zremrangebyscore(<span class="string">'sync:wait'</span>, <span class="number">0</span>, time.time(<span class="number">-900</span>))</span><br></pre></td></tr></table></figure>
+
+<p>INFO命令提供了大量与Redis状态有关的信息  </p>
+<h2 id="处理系统故障"><a href="#处理系统故障" class="headerlink" title="处理系统故障"></a>处理系统故障</h2><p>检验快照文件和AOF文件  </p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">redis-check-aof [--fix] &lt;file.aof&gt;</span><br><span class="line">redis-check-dummp &lt;dummp.rdb&gt;</span><br></pre></td></tr></table></figure>
+
+<p>redis-check-aof –fix 会对aof文件进行修复<br>是在不正确或者不完整的命令 删除及之后的所有命令  </p>
+<h2 id="替换主服务器"><a href="#替换主服务器" class="headerlink" title="替换主服务器"></a>替换主服务器</h2><p>就是主服务器挂了 然后原来的从服务器作为主服务器加一个从服务器  </p>
+<h2 id="Redis事务"><a href="#Redis事务" class="headerlink" title="Redis事务"></a>Redis事务</h2><p>设计与和实现游戏商品买卖市场  </p>
+<h3 id="定义用户信息和用户包裹"><a href="#定义用户信息和用户包裹" class="headerlink" title="定义用户信息和用户包裹"></a>定义用户信息和用户包裹</h3><p>用户信息存储在一个散列里面 散列的各个键值对分别记录了用户的姓名 用户拥有的钱数等属性<br>用户包裹使用一个集合来表示 他记录了包裹里面每件商品的唯一编号  </p>
+<p><img src="/2019/10/15/redis实战速读书笔记-四/%E7%94%A8%E6%88%B7%E4%BF%A1%E6%81%AF%E5%92%8C%E5%8C%85%E8%A3%B9.jpg" alt="用户信息和包裹">  </p>
+<p>商品买卖市场需求: 一个用户 (卖家) 可以将直接的商品按照给定的价格放到市场上进行销售<br>当另一个用户 (买家) 购买这个商品时 卖家就会收到钱 另外 这里的市场只能按商品价格来排序  </p>
+<p>为了将被销售商品的全部信息都存储在市场里面 将商品的ID和卖家的ID拼接起来<br>并将拼接的结果用作成员存储到市场有序结合 并按价格排序  </p>
+<p><img src="/2019/10/15/redis实战速读书笔记-四/%E5%95%86%E5%93%81%E5%94%AE%E5%8D%96%E6%9C%89%E5%BA%8F%E9%9B%86%E5%90%88.jpg" alt="商品售卖有序集合">  </p>
+<h3 id="将商品放到市场上销售"><a href="#将商品放到市场上销售" class="headerlink" title="将商品放到市场上销售"></a>将商品放到市场上销售</h3><p>在将一件商品放到市场上进行销售的时候 程序需要将被销售的商品添加到记录市场正在销售商品的有序集合里<br>并在添加操作执行的过程中 监视卖家的包裹以确保被销售的商品的确存在于卖家的包裹当中  </p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">list_item</span><span class="params">(conn, itemid, sellerid, price)</span>:</span></span><br><span class="line">    inventory = <span class="string">"inventory:%s"</span> % sellerid</span><br><span class="line">    item = <span class="string">"%s.%s"</span> % (itemid, sellerid)</span><br><span class="line">    end = time.time() + <span class="number">5</span> </span><br><span class="line">    pipe = conn.pipeline()</span><br><span class="line">    <span class="keyword">while</span> time.time() &lt; end:</span><br><span class="line">        <span class="keyword">try</span>:</span><br><span class="line">            pipe.watch(inventory) <span class="comment"># 监视用户包裹发送的变化</span></span><br><span class="line">            <span class="keyword">if</span> <span class="keyword">not</span> pipe.sismember(inventory, itemid):</span><br><span class="line">                <span class="comment"># 如果指定的商品u在用户的包裹里 那么停止对包裹的监控并返回一个空值</span></span><br><span class="line">                pipe.unwatch()</span><br><span class="line">                <span class="keyword">return</span> <span class="literal">None</span></span><br><span class="line">            <span class="comment"># 否则就添加到有序集合</span></span><br><span class="line">            pipe.multi()</span><br><span class="line">            pipe.zadd(<span class="string">'market:'</span>, item, price)</span><br><span class="line">            pipe.srem(inventory, itemid)</span><br><span class="line">            pipe.execute()</span><br><span class="line">            <span class="keyword">return</span> <span class="literal">True</span></span><br><span class="line">        <span class="keyword">except</span> redis.exceptions.WatchError:</span><br><span class="line">            <span class="keyword">pass</span></span><br><span class="line">        <span class="keyword">return</span> <span class="literal">False</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="购买商品"><a href="#购买商品" class="headerlink" title="购买商品"></a>购买商品</h3><p>程序首先使用 WATCH 对市场以及买家的个人信息进行监视 然后获取买家拥有的钱数以及商品的售价 并检查买家是否有 足够的钱来购买该商品 够的话 程序会将买家支付的钱转移给卖家<br>然后将售出的商品移动至卖家的包裹 并在市场中移除 当卖家的个人信息或者商品买卖市场出现变化而导致 WatchError 异常出现 程序将进行重试 最大重试时间为10s  </p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">purchase_item</span><span class="params">(conn, buyerid, itemid, sellerid, lprice)</span>:</span></span><br><span class="line">    buyer = <span class="string">"users:%s"</span> % buyerid</span><br><span class="line">    seller = <span class="string">"users:%s"</span> % sellerid</span><br><span class="line">    item = <span class="string">"%s.%s"</span> % (itemid, sellerid)</span><br><span class="line">    inventory = <span class="string">"inventory:%s"</span> % buyerid</span><br><span class="line">    end = time.time() + <span class="number">10</span></span><br><span class="line">    pipe = conn.pipeline()</span><br><span class="line">    <span class="comment"># 对商品买卖市场以及买家的个人信息进行监控</span></span><br><span class="line">    <span class="keyword">while</span> time.time() &lt; end:</span><br><span class="line">        <span class="keyword">try</span>:</span><br><span class="line">            <span class="comment"># 对商品买卖市场以及买家的个人信息进行监控</span></span><br><span class="line">            pipe.watch(<span class="string">"market:"</span>, buyer)</span><br><span class="line">            price = pipe.zscore(<span class="string">"market:"</span> item)</span><br><span class="line">            funds = int(pipe.hget(buyer, <span class="string">"funds"</span>))</span><br><span class="line">            <span class="comment"># 买家能够买的起</span></span><br><span class="line">            <span class="keyword">if</span> price != lprice <span class="keyword">or</span> price &gt; funds:</span><br><span class="line">                pipe.unwatch()</span><br><span class="line">                <span class="keyword">return</span> <span class="literal">None</span></span><br><span class="line">            pipe.multi()</span><br><span class="line">            pipe.hincrby(seller, <span class="string">"funds"</span>, int(price))</span><br><span class="line">            pipe.hincrby(buyer, <span class="string">"funds"</span>, int(-price))</span><br><span class="line">            pipe.sadd(inventory, itemid)</span><br><span class="line">            pipe.zrem(<span class="string">"market:"</span>, item)</span><br><span class="line">            pipe.execute()</span><br><span class="line">            <span class="keyword">return</span> <span class="literal">True</span></span><br><span class="line">        <span class="keyword">except</span> redis.exceptions.WatchError:</span><br><span class="line">            <span class="keyword">pass</span></span><br><span class="line">        <span class="keyword">return</span> <span class="literal">False</span></span><br></pre></td></tr></table></figure>
+
+<p>需要对商品买卖市场以及买家的个人信息进行监视 确保商品还在<br>监视买家是为了确保钱还够买  </p>
+<p>redis没有实现典型的加锁功能 尽可能的减少客户端的等待时间<br>Redis 只会在数据已经被其他客户端抢先修改了的情况下 通知执行了 WATCH 命令的客户端<br>是乐观锁<br>关系数据库实际执行的加锁操作是悲观锁  </p>
+<h3 id="非事务型流水线"><a href="#非事务型流水线" class="headerlink" title="非事务型流水线"></a>非事务型流水线</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">pipe = conn.pipeline(<span class="literal">False</span>)</span><br><span class="line"><span class="comment"># 后续正常</span></span><br></pre></td></tr></table></figure>
+
+<p>如果传入的True或者不传入任何参数 那么客户端将使用 MULTI和EXEC包裹起用户要执行的命令<br>如果传入False<br>那么还是会批量执行 但是不是要 MULTI和EXEC包裹要执行的这些命令<br>对于一个命令的执行结果并不影响另一个命令的输入 而且不需要事务的话 使用False 可以提升性能  </p>
+<h3 id="性能方面的注意事项"><a href="#性能方面的注意事项" class="headerlink" title="性能方面的注意事项"></a>性能方面的注意事项</h3><p><code>redis-benchmark</code>  </p>
+<p>展示了一些常用Redis命令在1s内可以执行的次数  </p>
+<p>不指定参数 默认使用 50个客户端来进行性能测试  </p>
+<p><img src="/2019/10/15/redis实战速读书笔记-四/%E6%80%A7%E8%83%BD%E9%97%AE%E9%A2%98%E5%8E%9F%E5%9B%A0.jpg" alt="性能问题原因">  </p>
+
+      
+    </div>
+
+    
+
+    
+      
+    
+
+    
+    
+    
+
+    
+
+    
+      
+    
+    
+
+    
+
+    <footer class="post-footer">
+      
+        
+          
+        
+        <div class="post-tags">
+          
+            <a href="/tags/读书笔记/" rel="tag"># 读书笔记</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2019/09/30/redis实战读书笔记-三/" rel="next" title="redis实战读书笔记(三)">
+                <i class="fa fa-chevron-left"></i> redis实战读书笔记(三)
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2019/11/08/sqlmap源码浅析/" rel="prev" title="sqlmap源码浅析">
+                sqlmap源码浅析 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+  </div>
+
+
+          </div>
+          
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  
+    <img class="site-author-image" itemprop="image" src="/images/avatar.jpg" alt="Recar">
+  
+  <p class="site-author-name" itemprop="name">Recar</p>
+  <div class="site-description motion-element" itemprop="description">年轻人就应该多读源码多读书</div>
+</div>
+
+
+  <nav class="site-state motion-element">
+    
+      <div class="site-state-item site-state-posts">
+        
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">18</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+    
+
+    
+
+    
+      
+      
+      <div class="site-state-item site-state-tags">
+        
+        
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+        <span class="site-state-item-count">7</span>
+        <span class="site-state-item-name">标签</span>
+        
+      </div>
+    
+  </nav>
+
+
+
+
+
+
+
+
+
+
+
+
+
+          
+          
+        </div>
+      </div>
+
+      
+      <!--noindex-->
+        <div class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+            
+            
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#第四章-数据安全与性能保障"><span class="nav-number">1.</span> <span class="nav-text">第四章 数据安全与性能保障</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#持久化选项"><span class="nav-number">1.1.</span> <span class="nav-text">持久化选项</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#快照持久化"><span class="nav-number">1.1.1.</span> <span class="nav-text">快照持久化</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#AOF持久化"><span class="nav-number">1.1.2.</span> <span class="nav-text">AOF持久化</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#重写-压缩AOF文件"><span class="nav-number">1.1.3.</span> <span class="nav-text">重写/压缩AOF文件</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#复制"><span class="nav-number">1.1.4.</span> <span class="nav-text">复制</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#Redis-复制的启动过程"><span class="nav-number">1.1.4.1.</span> <span class="nav-text">Redis 复制的启动过程</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#主从链"><span class="nav-number">1.1.5.</span> <span class="nav-text">主从链</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#检验硬盘写入"><span class="nav-number">1.2.</span> <span class="nav-text">检验硬盘写入</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#处理系统故障"><span class="nav-number">1.3.</span> <span class="nav-text">处理系统故障</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#替换主服务器"><span class="nav-number">1.4.</span> <span class="nav-text">替换主服务器</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Redis事务"><span class="nav-number">1.5.</span> <span class="nav-text">Redis事务</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#定义用户信息和用户包裹"><span class="nav-number">1.5.1.</span> <span class="nav-text">定义用户信息和用户包裹</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#将商品放到市场上销售"><span class="nav-number">1.5.2.</span> <span class="nav-text">将商品放到市场上销售</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#购买商品"><span class="nav-number">1.5.3.</span> <span class="nav-text">购买商品</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#非事务型流水线"><span class="nav-number">1.5.4.</span> <span class="nav-text">非事务型流水线</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#性能方面的注意事项"><span class="nav-number">1.5.5.</span> <span class="nav-text">性能方面的注意事项</span></a></li></ol></li></ol></li></ol></div>
+            
+
+          </div>
+        </div>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2021</span>
+  <span class="with-love" id="animate">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Recar</span>
+
+  
+
+  
+</div>
+
+
+  <div class="powered-by">由 <a href="https://hexo.io" class="theme-link" rel="noopener" target="_blank">Hexo</a> 强力驱动 v3.9.0</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 – <a href="https://theme-next.org" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a> v7.2.0</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+          <span id="scrollpercent"><span>0</span>%</span>
+        
+      </div>
+    
+
+    
+
+    
+
+    
+
+  </div>
+
+  
+
+<script>
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+
+
+
+
+
+
+
+
+
+  
+  <script src="/lib/jquery/index.js?v=3.4.1"></script>
+
+  
+  <script src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+
+
+
+  <script src="/js/utils.js?v=7.2.0"></script>
+
+  <script src="/js/motion.js?v=7.2.0"></script>
+
+
+
+  
+  
+
+
+  <script src="/js/affix.js?v=7.2.0"></script>
+
+  <script src="/js/schemes/pisces.js?v=7.2.0"></script>
+
+
+
+
+  
+  <script src="/js/scrollspy.js?v=7.2.0"></script>
+<script src="/js/post-details.js?v=7.2.0"></script>
+
+
+
+  <script src="/js/next-boot.js?v=7.2.0"></script>
+
+  
+
+  
+
+  
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<script>
+// GET RESPONSIVE HEIGHT PASSED FROM IFRAME
+
+window.addEventListener("message", function(e) {
+  var data = e.data;
+  if ((typeof data === 'string') && (data.indexOf('ciu_embed') > -1)) {
+    var featureID = data.split(':')[1];
+    var height = data.split(':')[2];
+    $(`iframe[data-feature=${featureID}]`).height(parseInt(height) + 30);
+  }
+}, false);
+</script>
+
+
+
+
+
+
+
+
+  
+
+</body>
+</html>

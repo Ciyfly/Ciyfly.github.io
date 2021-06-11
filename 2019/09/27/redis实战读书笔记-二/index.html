@@ -1,0 +1,861 @@
+<!DOCTYPE html>
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+<html class="theme-next gemini use-motion" lang="zh-CN">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=7.2.0">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=7.2.0">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=7.2.0">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=7.2.0" color="#222">
+
+
+
+
+
+
+<link rel="stylesheet" href="/css/main.css?v=7.2.0">
+
+
+
+
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css?v=4.7.0">
+
+
+
+
+
+
+
+
+<script id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '7.2.0',
+    sidebar: {"position":"left","display":"post","offset":12,"onmobile":false},
+    back2top: {"enable":true,"sidebar":false,"scrollpercent":true},
+    copycode: {"enable":false,"show_result":false,"style":null},
+    fancybox: false,
+    mediumzoom: false,
+    lazyload: false,
+    pangu: false,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    },
+    translation: {
+      copy_button: '复制',
+      copy_success: '复制成功',
+      copy_failure: '复制失败'
+    }
+  };
+</script>
+
+  <meta name="description" content="redis第二章的笔记 基于redis的定时任务调度实现代码 关于一个web网站的redis使用的一些实例">
+<meta name="keywords" content="读书笔记">
+<meta property="og:type" content="article">
+<meta property="og:title" content="redis实战读书笔记(二)">
+<meta property="og:url" content="http://yoursite.com/2019/09/27/redis实战读书笔记-二/index.html">
+<meta property="og:site_name" content="Recar的笔记">
+<meta property="og:description" content="redis第二章的笔记 基于redis的定时任务调度实现代码 关于一个web网站的redis使用的一些实例">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:image" content="http://yoursite.com/2019/09/27/redis实战读书笔记-二/redis_schedule.jpg">
+<meta property="og:updated_time" content="2021-06-11T10:33:06.317Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="redis实战读书笔记(二)">
+<meta name="twitter:description" content="redis第二章的笔记 基于redis的定时任务调度实现代码 关于一个web网站的redis使用的一些实例">
+<meta name="twitter:image" content="http://yoursite.com/2019/09/27/redis实战读书笔记-二/redis_schedule.jpg">
+
+
+
+
+
+  
+  
+  <link rel="canonical" href="http://yoursite.com/2019/09/27/redis实战读书笔记-二/">
+
+
+
+<script id="page.configurations">
+  CONFIG.page = {
+    sidebar: "",
+  };
+</script>
+
+  
+  <title>redis实战读书笔记(二) | Recar的笔记</title>
+  
+
+
+
+
+
+
+  <script>
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?f6Wf4b00fa957d7290583a86b0d8c2de1";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .motion-element,
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-title { opacity: initial; }
+
+  .use-motion .logo,
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-CN">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Recar的笔记</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+    
+    
+  </div>
+
+  <div class="site-nav-toggle">
+    <button aria-label="切换导航栏">
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  
+    <ul id="menu" class="menu">
+      
+        
+        
+        
+          
+          <li class="menu-item menu-item-home">
+
+    
+    
+      
+    
+
+    
+
+    <a href="/" rel="section"><i class="menu-item-icon fa fa-fw fa-home"></i> <br>首页</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-about">
+
+    
+    
+      
+    
+
+    
+
+    <a href="/about/" rel="section"><i class="menu-item-icon fa fa-fw fa-user"></i> <br>关于</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-tags">
+
+    
+    
+      
+    
+
+    
+
+    <a href="/tags/" rel="section"><i class="menu-item-icon fa fa-fw fa-tags"></i> <br>标签</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-archives">
+
+    
+    
+      
+    
+
+    
+
+    <a href="/archives/" rel="section"><i class="menu-item-icon fa fa-fw fa-archive"></i> <br>归档</a>
+
+  </li>
+
+      
+      
+    </ul>
+  
+
+  
+
+  
+</nav>
+
+
+
+</div>
+    </header>
+
+    
+  
+  
+
+  
+
+  <a href="https://github.com/Ciyfly" class="github-corner" title="Follow me on GitHub" aria-label="Follow me on GitHub" rel="noopener" target="_blank"><svg width="80" height="80" viewbox="0 0 250 250" aria-hidden="true"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"/><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"/><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"/></svg></a>
+
+
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+            
+
+          
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+      
+
+  
+  
+  
+
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2019/09/27/redis实战读书笔记-二/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Recar">
+      <meta itemprop="description" content="年轻人就应该多读源码多读书">
+      <meta itemprop="image" content="/images/avatar.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Recar的笔记">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">redis实战读书笔记(二)
+
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+
+          
+          
+          
+
+          
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+
+              
+                
+              
+
+              <time title="创建时间：2019-09-27 15:57:26" itemprop="dateCreated datePublished" datetime="2019-09-27T15:57:26+00:00">2019-09-27</time>
+            </span>
+          
+
+          
+            
+
+            
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">更新于</span>
+                
+                <time title="修改时间：2021-06-11 10:33:06" itemprop="dateModified" datetime="2021-06-11T10:33:06+00:00">2021-06-11</time>
+              </span>
+            
+          
+
+          
+
+          
+          
+
+          
+
+          
+
+          <br>
+          
+
+          
+
+          
+            <div class="post-description">redis第二章的笔记 基于redis的定时任务调度实现代码 关于一个web网站的redis使用的一些实例</div>
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h1 id="Redis-第二章"><a href="#Redis-第二章" class="headerlink" title="Redis 第二章"></a>Redis 第二章</h1><h2 id="使用Redis构建Web应用"><a href="#使用Redis构建Web应用" class="headerlink" title="使用Redis构建Web应用"></a>使用Redis构建Web应用</h2><p>这里假设的是一个大型网上商店 每天都会有大约500w 不同的用户 并且带来1亿次点击 并购买超过10w件商品  </p>
+<h3 id="使用Redis来管理用户登录会话"><a href="#使用Redis来管理用户登录会话" class="headerlink" title="使用Redis来管理用户登录会话"></a>使用Redis来管理用户登录会话</h3><p>首先使用一个散列来存储cookie令牌与已登录用户自己的映射 要检查一个用户是否已经登录 需要根据给定的令牌来查找与之对应的用户<br>并在用户已经登录的情况下 返回该用户的ID  </p>
+<h5 id="浏览商品-更新令牌"><a href="#浏览商品-更新令牌" class="headerlink" title="浏览商品 更新令牌"></a>浏览商品 更新令牌</h5><p>用户每次浏览页面的时候 程序都会对用户存储在登录散列里面的信息进行更新 并将用户的令牌和当前时间戳添加到记录 最近登录用户的有序集合里<br>如果用户正在浏览的是一个商品页面 那么程序还会将这个商品添加到记录这个用户最近浏览过的有序集合里面 并在被记录的数量超过25个的时候<br>对这个有序集合进行修改 最大保持最近的25个商品  </p>
+<p>即更新 tokne的时候把用户浏览的商品添加到有序集合中并使用 zremrangebyrank命令 移除旧的记录只保留最近流量的25个商品  </p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">update_token</span><span class="params">(conn, token, user, item=None)</span>:</span></span><br><span class="line">    timestamp = time.time()</span><br><span class="line">    <span class="comment"># 维持令牌与已登录用户之间的映射</span></span><br><span class="line">    conn.hset(<span class="string">'login'</span>, token, user)</span><br><span class="line">    conn.zadd(<span class="string">'recent'</span>, token, timestamp)</span><br><span class="line">    <span class="keyword">if</span> item:</span><br><span class="line">        <span class="comment"># 记录用户浏览过的商品</span></span><br><span class="line">        conn.zadd(<span class="string">'viewed:'</span> + token, , item, timestamp)</span><br><span class="line">        <span class="comment"># 移除旧的记录 只暴力用户最近浏览过的25个商品</span></span><br><span class="line">        conn.zremrangebyrank(<span class="string">'viewed:'</span>+ token, <span class="number">0</span>, <span class="number">-26</span>)</span><br></pre></td></tr></table></figure>
+
+<p>但是随着时间推移数据量很大 我们需要定期清除旧的绘画数据 限制会话数据的数量 这里只保存最新的1000w个会话  </p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line">QUIT = <span class="literal">False</span></span><br><span class="line">LIMIT = <span class="number">10000000</span></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">clean_sessions</span><span class="params">(conn)</span>:</span></span><br><span class="line">    <span class="keyword">while</span> <span class="keyword">not</span> QUIT:</span><br><span class="line">        <span class="comment"># 获取目前令牌数量</span></span><br><span class="line">        size = conn.zcard(<span class="string">'recent:'</span>)</span><br><span class="line">        <span class="keyword">if</span> size &lt;= LIMIT:</span><br><span class="line">            time.sleep(<span class="number">1</span>)</span><br><span class="line">                <span class="keyword">continue</span></span><br><span class="line">        <span class="comment"># 每次先取出超过限制的数量再与100取最新的值作为结尾值</span></span><br><span class="line">        end_index = min(size - LIMIT, <span class="number">100</span>)</span><br><span class="line">        <span class="comment"># 获取需要移除的令牌ID</span></span><br><span class="line">        tokens = connn.zrange(<span class="string">'recent:'</span>, <span class="number">0</span>, end_index<span class="number">-1</span>)</span><br><span class="line">        session_keys = []</span><br><span class="line">        <span class="keyword">for</span> token <span class="keyword">in</span> tokens:</span><br><span class="line">            session_keys.append(<span class="string">'viewed:'</span>+ token)</span><br><span class="line">        <span class="comment"># 批量删除</span></span><br><span class="line">        conn.delete(*session_keys)</span><br><span class="line">        conn.hdel(<span class="string">'login:'</span>, *tokens)</span><br><span class="line">        conn.zrem(<span class="string">'recent:'</span>, *tokens))</span><br></pre></td></tr></table></figure>
+
+<p>会以守护进程或者定期任务的形式执行  </p>
+<p>这里还讲了 python 接收可变数量参数的方式 上面的生成的 session_keys 是一个列表<br>传给delete的时候直接 *session_keys 这样就会在里面解包 是delete的里面的具体写法才可以这样<br>其实就是 *args 这个可变数量参数  </p>
+<p>上述对于过期数据的处理 还可以使用 Redis的EXPIRE命令<br>来设置集合的过期时间 但是这样就不能限制数量为一个范围了  </p>
+<p>上面的代码中 有一个竞争条件 如果正在删除某个用户的信息 但是这个用户又在同一时间访问网站的话<br>会导致用户信息删除 用户需要重新登录  </p>
+<h4 id="Redis实现购物车"><a href="#Redis实现购物车" class="headerlink" title="Redis实现购物车"></a>Redis实现购物车</h4><p>每个用户的购物车都是一个散列 这个散列存储了商品ID 与商品订购数量之间的映射 对商品数量进行验证的工作由web应用程序负责<br>我们要做的是在商品的订购数量变化时 对购物车进行更新<br>如果用户订购某件商品的数量大于0 那么程序会将这件商品的ID 以及用户订购该商品的数量添加到散列里面<br>如果用户购买的商品已经存在于散列里面 那么新的订购会覆盖已有的订购数量<br>相反的 如果用户订购某件商品的数量不大于0 那么从散列里面移除该条目  </p>
+<p>清除会话的时候把购物车一起清空  </p>
+<h4 id="网页缓存"><a href="#网页缓存" class="headerlink" title="网页缓存"></a>网页缓存</h4><p>很多页面不会改变 页面内容不需要动态生成 想办法不再生成这些页面 减少动态生成内容的时间<br>所有标准的Python应用框架都提供了在处理请求之前或者之后添加层(layer) 的能力 这些层通常被称为 中间件或者插件<br>我们将创建一个这样的层来调用Redis缓存函数<br>对于一个不能被缓存的请求 函数将直接生成并返回页面 而对于可以被缓存的请求 函数首先会尝试从缓存中取出并返回被缓存的页面<br>如果缓存不存在 那么函数会生成页面并将其缓存在Redis 里面5分钟 最后再将页面返回给函数调用者  </p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">cache_request</span><span class="params">(conn, request, callback)</span>:</span></span><br><span class="line">    <span class="comment"># callback是生成页面的函数</span></span><br><span class="line">    <span class="keyword">if</span> <span class="keyword">not</span> can_cache(conn, request):</span><br><span class="line">        <span class="comment"># 对于不能缓存的函数直接生成页面后返回</span></span><br><span class="line">        <span class="keyword">return</span> callback(request)</span><br><span class="line">    <span class="comment"># 将请求转换成一个简单的字符串键  </span></span><br><span class="line">    page_key = <span class="string">'cache:'</span> + hash_request(request)</span><br><span class="line">    content = conn.get(page_key)</span><br><span class="line">    <span class="keyword">if</span> <span class="keyword">not</span> content: <span class="comment"># 如果页面还没有被缓存 那么生成页面</span></span><br><span class="line">        content = callback(request)</span><br><span class="line">        conn.setex(page_key, content, <span class="number">300</span>) <span class="comment"># 生成的页面放到缓存中</span></span><br><span class="line">    <span class="keyword">return</span> content</span><br></pre></td></tr></table></figure>
+
+<h5 id="数据行缓存"><a href="#数据行缓存" class="headerlink" title="数据行缓存"></a>数据行缓存</h5><p>促销活动<br>这个活动每天都会推出一些特价商品供用户抢购 所有特价商品的数量都是限定的 卖完即止 在这种情况下 网站是不能对整个促销页面进行缓存的<br>如果每次载入页面都从数据库里取出特价商品的剩余数量的话 会给数据库带来巨大的压力  </p>
+<p>这里我们要对数据行进行缓存  </p>
+<p>编写一个持续运行的守护进程函数 让整个函数将制定的数据行缓存到Redis里面 并不定期的读这些缓存进行更新 缓存函数会将数据行编码为JSON字典<br>存储在Redis的字符串里面  数据列会被映射为键 <code>inv:273  {&quot;a&quot;: 1}</code><br>程序使用了两个有序集合来记录应该在何时对缓存进行更新<br>第一个有序集合为调度有序集合 他的成员为数据行的行ID 而分值则是一个时间戳 这个时间戳记录了一个个在何时将指定的数据行缓存到Redis里面<br>第二个有序集合为延时(delay) 有序集合 他的成员也是数据行的行ID 而分值则是 这个数据行的缓存需要每隔多少秒更新一次  </p>
+<p>为了让缓存函数定期的缓存数据行 程序首先需要将行ID和给定的延迟值添加到延迟有序集合里面 然后再将行ID和当前时间的时间戳添加到调度<br>有序集合里面 实际执行缓存操作的函数需要用到数据行的延迟值 如果某个数据行的延迟值不存在 那么程序将取消对这个数据行的调度<br>如果我们想要移除某个数据行已有的缓存 并且让缓存函数不再缓存那个数据行 那么只需要把那个数据行的延迟值设置为小于或者等于0  </p>
+<p>负责调度缓存和终止缓存  </p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">schedule_row_cache</span><span class="params">(conn, row_id, delay)</span>:</span></span><br><span class="line">    <span class="comment"># 先设置数据行的延迟值</span></span><br><span class="line">    conn.zadd(<span class="string">'delay:'</span>, row_id, delay)</span><br><span class="line">    <span class="comment"># 立即对需要缓存的数据行进行调度添加</span></span><br><span class="line">    conn.zadd(<span class="string">'schedule:'</span>, row_id, time.time())</span><br></pre></td></tr></table></figure>
+
+<p>如何进行缓存<br>负责数据行的函数会尝试读取调度有序集合的第一个元素以及该元素的分值 如果调用有序集合没有包含任何元素 或者分值存储的时间戳所指定的<br>时间未来临 那么先sleep 50ms 然后再检查<br>当缓存函数发现一个需要立即进行更新的数据行时 缓存函数会检查这个数据行的延迟值:<br>如果延迟值大于0的数据行来说 缓存函数会从数据库里面取出这些行 转为JSON 格式存储 并且更新这些行的调度时间  </p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">cache_rows</span><span class="params">(conn)</span>:</span></span><br><span class="line">    <span class="keyword">while</span> <span class="keyword">not</span> QUIT:</span><br><span class="line">        <span class="comment"># 尝试获取下一个需要被缓存的数据行以及该行的调度时间戳 返回一个包含0个或者一个元组的列表</span></span><br><span class="line">        next = conn.zrange(<span class="string">'schedule:'</span>, <span class="number">0</span>, <span class="number">0</span>, withscores=<span class="literal">True</span>)</span><br><span class="line">        now = time.time()</span><br><span class="line">        <span class="keyword">if</span> <span class="keyword">not</span> next <span class="keyword">or</span> next[<span class="number">0</span>][<span class="number">1</span>] &gt; now: <span class="comment"># 时间没到或者0</span></span><br><span class="line">            time.sleep(<span class="number">0.05</span>)</span><br><span class="line">            <span class="keyword">continue</span></span><br><span class="line">        row_id = next[<span class="number">0</span>][<span class="number">0</span>]</span><br><span class="line">        <span class="comment"># 提前获取下一次调度的延迟时间</span></span><br><span class="line">        delay = conn.zscore(<span class="string">'delay:'</span>, row_id)</span><br><span class="line">        <span class="keyword">if</span> datetime &lt;=<span class="number">0</span>:</span><br><span class="line">            <span class="comment"># 不必再缓存这个行 从缓存中删除  </span></span><br><span class="line">            conn.zrem(<span class="string">'delay:'</span>, row_id)</span><br><span class="line">            conn.zrem(<span class="string">'schedule:'</span>, row_id)</span><br><span class="line">            conn.delete(<span class="string">'inv:'</span>, row_id)</span><br><span class="line">            <span class="keyword">continue</span></span><br><span class="line">        <span class="comment"># 读取数据行</span></span><br><span class="line">        row = Inventory.get(row_id)</span><br><span class="line">        <span class="comment"># 更新调度时间并设置缓存值</span></span><br><span class="line">        conn.zadd(<span class="string">'schedule:'</span>,row_id, now + delay)</span><br><span class="line">        conn.set(<span class="string">'inv:'</span>,row_id, json.dumps(row.to_dict()))</span><br></pre></td></tr></table></figure>
+
+<p>重复进行调度的自动缓存机制  </p>
+<p>简单来说是这样的:<br>两个有序集合 一个存储每次执行的间隔时间 一个存储下一次执行的时间<br>每次判断下一次执行时间是否到了 到了就执行并删除当前调度获取间隔时间新插入新的调度 再次判断  </p>
+<h4 id="网页分析"><a href="#网页分析" class="headerlink" title="网页分析"></a>网页分析</h4><p>不能对全部商品进行缓存 只对浏览量大的进行<br>在 更新 token的时候对 浏览的商品进行计数统计<br>以和这个商品的浏览次数进行排序 那么会两级分化<br>为了让商品的浏览次数排行榜能保持最新 我们需要定期修剪有序集合的长度并调度已有元素的分值<br>从而使得新流行的商品也可以在排行榜里面占据一席之地 通过 ZINTERSTORELai 来完成  </p>
+<p>每隔5分钟 删除所有排名在2w后面的商品 并将剩下的所有商品的浏览次数减半  </p>
+<p>然后根据商品的浏览次数排名来判断是否需要缓存这个页面  </p>
+<p>在为应用程序构建新构件时 不要害怕回过头去重构已有的构件<br>可能只是添加一些细微的修改来实现  </p>
+<h4 id="调度实例代码"><a href="#调度实例代码" class="headerlink" title="调度实例代码"></a>调度实例代码</h4><p>我们这里写下调度的实例代码  </p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#!/usr/bin/python</span></span><br><span class="line"><span class="comment"># coding=UTF-8</span></span><br><span class="line"><span class="string">'''</span></span><br><span class="line"><span class="string">@Author: recar</span></span><br><span class="line"><span class="string">@Date: 2019-09-27 11:37:22</span></span><br><span class="line"><span class="string">@LastEditTime: 2019-09-27 15:48:43</span></span><br><span class="line"><span class="string">'''</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">from</span> datetime <span class="keyword">import</span> datetime</span><br><span class="line"><span class="keyword">from</span> threading <span class="keyword">import</span> Thread</span><br><span class="line"><span class="keyword">import</span> redis</span><br><span class="line"><span class="keyword">import</span> time</span><br><span class="line"><span class="keyword">import</span> sys</span><br><span class="line">reload(sys)</span><br><span class="line">sys.setdefaultencoding(<span class="string">'utf-8'</span>)</span><br><span class="line"></span><br><span class="line">redis_server = <span class="string">"127.0.0.1"</span></span><br><span class="line">redis_port = <span class="number">6379</span></span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Scheduler</span><span class="params">(object)</span>:</span></span><br><span class="line">    <span class="comment"># 基于redis实现一个定时调度功能</span></span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span>  <span class="title">__init__</span><span class="params">(self, schedule=False)</span>:</span></span><br><span class="line">        self.is_schedule = schedule</span><br><span class="line">        self.conn = self.get_connection()</span><br><span class="line">        self.zset_delay_key = <span class="string">"zset_delay:"</span></span><br><span class="line">        self.zset_schedule_key = <span class="string">"zset_schedule:"</span></span><br><span class="line">        <span class="keyword">if</span> self.is_schedule:</span><br><span class="line">            self.schedule()</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">get_connection</span><span class="params">(self)</span>:</span></span><br><span class="line">        connect = redis.Redis(host=redis_server, port=redis_port,db=<span class="number">0</span>)</span><br><span class="line">        <span class="keyword">return</span> connect</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">add_task</span><span class="params">(self, task_id, delay)</span>:</span></span><br><span class="line">        <span class="comment"># 添加时间间隔</span></span><br><span class="line">        self.conn.zadd(self.zset_delay_key, &#123;task_id: delay&#125;)</span><br><span class="line">        <span class="comment"># 添加调度任务 这个会要先生成一个立即调度的 </span></span><br><span class="line">        self.conn.zadd(self.zset_schedule_key, &#123;task_id: time.time()&#125;)</span><br><span class="line">    </span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">schedule</span><span class="params">(self)</span>:</span></span><br><span class="line">        <span class="keyword">while</span> <span class="literal">True</span>:</span><br><span class="line">            next = self.conn.zrange(self.zset_schedule_key, <span class="number">0</span>, <span class="number">0</span>, withscores=<span class="literal">True</span>)</span><br><span class="line">            now = time.time()</span><br><span class="line">            <span class="comment"># print(next)</span></span><br><span class="line">            <span class="keyword">if</span> <span class="keyword">not</span> next <span class="keyword">or</span> next[<span class="number">0</span>][<span class="number">1</span>] &gt; now:</span><br><span class="line">                <span class="comment"># print('next: &#123;0&#125; -&gt; now: &#123;1&#125;'.format(next[0][1], now))</span></span><br><span class="line">                time.sleep(<span class="number">0.5</span>)</span><br><span class="line">                <span class="keyword">continue</span></span><br><span class="line">            task_id = next[<span class="number">0</span>][<span class="number">0</span>]</span><br><span class="line">            <span class="comment"># 获取时间间隔</span></span><br><span class="line">            delay = self.conn.zscore(self.zset_delay_key, task_id)</span><br><span class="line">            <span class="comment"># 如果更新了时间间隔 为0 那么都删除掉</span></span><br><span class="line">            <span class="keyword">if</span> delay &lt;=<span class="number">0</span>:</span><br><span class="line">                self.conn.zrem(self.zset_delay_key, task_id)</span><br><span class="line">                self.conn.zrem(self.zset_schedule_key, task_id)</span><br><span class="line">                <span class="keyword">continue</span></span><br><span class="line">            print(<span class="string">'exec task: &#123;0&#125; time: &#123;1&#125;'</span>.format(task_id, now))</span><br><span class="line">            <span class="comment"># 否则更新调度任务</span></span><br><span class="line">            self.conn.zrem(self.zset_schedule_key, task_id)</span><br><span class="line">            self.conn.zadd(self.zset_schedule_key, &#123;task_id: now+delay&#125;)</span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">main</span><span class="params">()</span>:</span></span><br><span class="line">    <span class="keyword">try</span>:</span><br><span class="line">        <span class="comment"># 启动一个定时调度监控</span></span><br><span class="line">        <span class="function"><span class="keyword">def</span> <span class="title">statr_schedule</span><span class="params">()</span>:</span></span><br><span class="line">            schedule = Scheduler(schedule=<span class="literal">True</span>)</span><br><span class="line">        t = Thread(target=statr_schedule, args=())</span><br><span class="line">        t.start()</span><br><span class="line">        print(<span class="string">'start schedule'</span>)</span><br><span class="line">        schedule = Scheduler()</span><br><span class="line">        schedule.add_task(<span class="number">1</span>, <span class="number">5</span>)</span><br><span class="line">        print(<span class="string">'add task: &#123;0&#125;'</span>.format(<span class="number">1</span>))</span><br><span class="line">        schedule.add_task(<span class="number">2</span>, <span class="number">10</span>)</span><br><span class="line">        print(<span class="string">'add task: &#123;&#125;'</span>.format(<span class="number">2</span>))</span><br><span class="line">    <span class="keyword">except</span> Exception <span class="keyword">as</span> e:</span><br><span class="line">        print(e)</span><br><span class="line">        exit(<span class="number">1</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">"__main__"</span>:</span><br><span class="line">    main()</span><br></pre></td></tr></table></figure>
+
+<p>输出<br><img src="/2019/09/27/redis实战读书笔记-二/redis_schedule.jpg" alt="redis_schedule">  </p>
+<p>添加任务就立即执行一次<br>可以看到后续都是按时间来执行的  </p>
+
+      
+    </div>
+
+    
+
+    
+      
+    
+
+    
+    
+    
+
+    
+
+    
+      
+    
+    
+
+    
+
+    <footer class="post-footer">
+      
+        
+          
+        
+        <div class="post-tags">
+          
+            <a href="/tags/读书笔记/" rel="tag"># 读书笔记</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2019/09/25/redis实战读书笔记-一/" rel="next" title="redis实战读书笔记(一)">
+                <i class="fa fa-chevron-left"></i> redis实战读书笔记(一)
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2019/09/30/redis实战读书笔记-三/" rel="prev" title="redis实战读书笔记(三)">
+                redis实战读书笔记(三) <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+  </div>
+
+
+          </div>
+          
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  
+    <img class="site-author-image" itemprop="image" src="/images/avatar.jpg" alt="Recar">
+  
+  <p class="site-author-name" itemprop="name">Recar</p>
+  <div class="site-description motion-element" itemprop="description">年轻人就应该多读源码多读书</div>
+</div>
+
+
+  <nav class="site-state motion-element">
+    
+      <div class="site-state-item site-state-posts">
+        
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">18</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+    
+
+    
+
+    
+      
+      
+      <div class="site-state-item site-state-tags">
+        
+        
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+        <span class="site-state-item-count">7</span>
+        <span class="site-state-item-name">标签</span>
+        
+      </div>
+    
+  </nav>
+
+
+
+
+
+
+
+
+
+
+
+
+
+          
+          
+        </div>
+      </div>
+
+      
+      <!--noindex-->
+        <div class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+            
+            
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#Redis-第二章"><span class="nav-number">1.</span> <span class="nav-text">Redis 第二章</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#使用Redis构建Web应用"><span class="nav-number">1.1.</span> <span class="nav-text">使用Redis构建Web应用</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#使用Redis来管理用户登录会话"><span class="nav-number">1.1.1.</span> <span class="nav-text">使用Redis来管理用户登录会话</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#浏览商品-更新令牌"><span class="nav-number">1.1.1.0.1.</span> <span class="nav-text">浏览商品 更新令牌</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Redis实现购物车"><span class="nav-number">1.1.1.1.</span> <span class="nav-text">Redis实现购物车</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#网页缓存"><span class="nav-number">1.1.1.2.</span> <span class="nav-text">网页缓存</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#数据行缓存"><span class="nav-number">1.1.1.2.1.</span> <span class="nav-text">数据行缓存</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#网页分析"><span class="nav-number">1.1.1.3.</span> <span class="nav-text">网页分析</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#调度实例代码"><span class="nav-number">1.1.1.4.</span> <span class="nav-text">调度实例代码</span></a></li></ol></li></ol></li></ol></div>
+            
+
+          </div>
+        </div>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2021</span>
+  <span class="with-love" id="animate">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Recar</span>
+
+  
+
+  
+</div>
+
+
+  <div class="powered-by">由 <a href="https://hexo.io" class="theme-link" rel="noopener" target="_blank">Hexo</a> 强力驱动 v3.9.0</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 – <a href="https://theme-next.org" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a> v7.2.0</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+          <span id="scrollpercent"><span>0</span>%</span>
+        
+      </div>
+    
+
+    
+
+    
+
+    
+
+  </div>
+
+  
+
+<script>
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+
+
+
+
+
+
+
+
+
+  
+  <script src="/lib/jquery/index.js?v=3.4.1"></script>
+
+  
+  <script src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+
+
+
+  <script src="/js/utils.js?v=7.2.0"></script>
+
+  <script src="/js/motion.js?v=7.2.0"></script>
+
+
+
+  
+  
+
+
+  <script src="/js/affix.js?v=7.2.0"></script>
+
+  <script src="/js/schemes/pisces.js?v=7.2.0"></script>
+
+
+
+
+  
+  <script src="/js/scrollspy.js?v=7.2.0"></script>
+<script src="/js/post-details.js?v=7.2.0"></script>
+
+
+
+  <script src="/js/next-boot.js?v=7.2.0"></script>
+
+  
+
+  
+
+  
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<script>
+// GET RESPONSIVE HEIGHT PASSED FROM IFRAME
+
+window.addEventListener("message", function(e) {
+  var data = e.data;
+  if ((typeof data === 'string') && (data.indexOf('ciu_embed') > -1)) {
+    var featureID = data.split(':')[1];
+    var height = data.split(':')[2];
+    $(`iframe[data-feature=${featureID}]`).height(parseInt(height) + 30);
+  }
+}, false);
+</script>
+
+
+
+
+
+
+
+
+  
+
+</body>
+</html>
